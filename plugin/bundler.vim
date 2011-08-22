@@ -252,7 +252,17 @@ call s:add_methods('buffer',['getvar','setvar','project'])
 " }}}1
 " Bundle {{{1
 
-function! s:push_chdir(...)
+let s:errorformat = ''
+      \.'%+E%f:%l:\ parse\ error,'
+      \.'%W%f:%l:\ warning:\ %m,'
+      \.'%E%f:%l:in\ %*[^:]:\ %m,'
+      \.'%E%f:%l:\ %m,'
+      \.'%-C%\tfrom\ %f:%l:in\ %.%#,'
+      \.'%-Z%\tfrom\ %f:%l,'
+      \.'%-Z%p^,'
+      \.'%-G%.%#'
+
+function! s:push_chdir()
   if !exists("s:command_stack") | let s:command_stack = [] | endif
   let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir " : "chdir "
   call add(s:command_stack,chdir.s:fnameescape(getcwd()))
@@ -268,21 +278,10 @@ endfunction
 function! s:Bundle(bang,arg)
   let old_makeprg = &l:makeprg
   let old_errorformat = &l:errorformat
-  call s:push_chdir()
   try
     let &l:makeprg = 'bundle'
-    let &l:errorformat = ''
-          \.'%+E%f:%l:\ parse\ error,'
-          \.'%W%f:%l:\ warning:\ %m,'
-          \.'%E%f:%l:in\ %*[^:]:\ %m,'
-          \.'%E%f:%l:\ %m,'
-          \.'%-C%\tfrom\ %f:%l:in\ %.%#,'
-          \.'%-Z%\tfrom\ %f:%l,'
-          \.'%-Z%p^,'
-          \.'%-G%.%#'
+    let &l:errorformat = s:errorformat
     execute 'make! '.a:arg
-    redraw
-    call s:project().gems()
     if a:bang ==# ''
       return 'if !empty(getqflist()) | cfirst | endif'
     else
@@ -291,7 +290,6 @@ function! s:Bundle(bang,arg)
   finally
     let &l:errorformat = old_errorformat
     let &l:makeprg = old_makeprg
-    call s:pop_command()
   endtry
 endfunction
 
@@ -302,7 +300,29 @@ function! s:BundleComplete(A,L,P)
   return s:completion_filter(['install','update','exec','package','config','check','list','show','outdated','console','viz','benchmark'],a:A)
 endfunction
 
+function! s:SetupMake() abort
+  setlocal makeprg=bundle
+  let &l:errorformat = s:errorformat
+endfunction
+
 call s:command("-bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle :execute s:Bundle('<bang>',<q-args>)")
+
+augroup bundler_make
+  autocmd FileType gemfilelock call s:SetupMake()
+  autocmd FileType ruby
+        \ if expand('<afile>:t') ==? 'gemfile' |
+        \   call s:SetupMake() |
+        \ endif
+  autocmd QuickFixCmdPre *make*
+        \ if &makeprg ==# 'bundle' && exists('b:bundler_root') |
+        \   call s:push_chdir() |
+        \ endif
+  autocmd QuickFixCmdPost *make*
+        \ if &makeprg ==# 'bundle' && exists('b:bundler_root') |
+        \   call s:pop_command() |
+        \   execute 'call s:project().gems()' |
+        \ endif
+augroup END
 
 " }}}1
 " Bopen {{{1
