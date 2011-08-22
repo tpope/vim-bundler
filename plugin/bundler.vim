@@ -96,6 +96,41 @@ augroup END
 let s:abstract_prototype = {}
 
 " }}}1
+" Syntax highlighting {{{1
+
+function! s:syntaxfile()
+  syntax keyword rubyGemfileMethod gemspec gem source path git group platforms env
+  hi def link rubyGemfileMethod Function
+endfunction
+
+function! s:syntaxlock()
+  syn match gemfilelockHeading  '^[[:upper:]]\+$'
+  syn match gemfilelockKey      '^\s\+\zs\S\+:'he=e-1 skipwhite nextgroup=gemfilelockUrl,gemfilelockRevision
+  syn match gemfilelockRevision '[[:alnum:]._-]\+' contained
+  syn match gemfilelockUrl      '\w\+://\S\+' contained
+  syn match gemfilelockGem      '^\s\+\zs[[:alnum:]._-]\+\%([ !]\|$\)\@=' skipwhite nextgroup=gemfilelockVersions,gemfilelockBang
+  syn match gemfilelockVersions '([^()]*)' contained contains=gemfilelockVersion
+  syn match gemfilelockVersion  '[^,()]*' contained
+  syn match gemfilelockBang     '!' contained
+
+  hi def link gemfilelockHeading  PreProc
+  hi def link gemfilelockKey      Identifier
+  hi def link gemfilelockRevision Number
+  hi def link gemfilelockUrl      String
+  hi def link gemfilelockGem      Statement
+  hi def link gemfilelockVersion  Type
+  hi def link gemfilelockBang     Special
+endfunction
+
+augroup bundler_syntax
+  autocmd!
+  autocmd Syntax ruby if expand('<afile>:t') ==? 'gemfile' | call s:syntaxfile() | endif
+  autocmd BufNewFile,BufRead [Gg]emfile.lock setf gemfilelock
+  autocmd FileType gemfilelock set suffixesadd=.rb
+  autocmd Syntax gemfilelock call s:syntaxlock()
+augroup END
+
+" }}}1
 " Initialization {{{1
 
 function! s:FindBundlerRoot(path) abort

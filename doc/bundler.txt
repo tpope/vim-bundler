@@ -8,9 +8,9 @@ This plugin is only available if 'compatible' is not set.
 INTRODUCTION                                    *bundler*
 
 This lightweight companion to rails.vim and rake.vim provides support for
-Bundler.  In addition to the below commands, it also alters 'path' and 'tags'
-to include bundled gems.  I recommend gem-ctags for generating tags for your
-gems.
+Bundler.  In addition to the below commands, it also syntax highlights
+Gemfile and Gemfile.lock, and alters 'path' and 'tags' to include bundled
+gems.  I recommend gem-ctags for generating tags for your gems.
 
 COMMANDS                                        *bundler-commands*
 
