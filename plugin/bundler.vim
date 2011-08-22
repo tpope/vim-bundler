@@ -347,8 +347,12 @@ endfunction
 function! s:buffer_alter_paths() dict abort
   if self.getvar('&suffixesadd') =~# '\.rb\>'
     let new = sort(values(self.project().gems()))
+    let index = index(new, self.project().path())
+    if index > 0
+      call insert(new,remove(new,index))
+    endif
     let old = type(self.getvar('bundler_paths')) == type([]) ? self.getvar('bundler_paths') : []
-    if old != new
+    if old !=# new
       for [option, suffix] in [['path', 'lib'], ['tags', 'tags']]
         let value = self.getvar('&'.option)
         if !empty(old)
