@@ -212,7 +212,7 @@ function! s:project_gems() dict abort
       call self.alter_buffer_paths()
     endif
   endif
-  return self._gems
+  return get(self,'_gems',{})
 endfunction
 
 call s:add_methods('project',['gems'])
