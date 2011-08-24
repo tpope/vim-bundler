@@ -314,11 +314,11 @@ augroup bundler_make
         \   call s:SetupMake() |
         \ endif
   autocmd QuickFixCmdPre *make*
-        \ if &makeprg ==# 'bundle' && exists('b:bundler_root') |
+        \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
         \   call s:push_chdir() |
         \ endif
   autocmd QuickFixCmdPost *make*
-        \ if &makeprg ==# 'bundle' && exists('b:bundler_root') |
+        \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
         \   call s:pop_command() |
         \   execute 'call s:project().gems()' |
         \ endif
