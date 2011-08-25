@@ -197,7 +197,15 @@ function! s:project_gems() dict abort
   let time = getftime(self.path('Gemfile.lock'))
   if time != -1 && time != get(self,'_lock_time',-1)
     let self._gems = {}
-    let output = system('ruby -C '.s:shellesc(self.path()).' -rubygems -e "require %{bundler}; Bundler.load.specs.map {|s| puts %[#{s.name} #{s.full_gem_path}]}"')
+
+    " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
+    if executable('env')
+      let prefix = 'env PATH='.s:shellesc($PATH).' '
+    else
+      let prefix = ''
+    endif
+
+    let output = system(prefix.'ruby -C '.s:shellesc(self.path()).' -rubygems -e "require %{bundler}; Bundler.load.specs.map {|s| puts %[#{s.name} #{s.full_gem_path}]}"')
     if v:shell_error
       for line in split(output,"\n")
         if line !~ '^\t'
