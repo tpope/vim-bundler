@@ -1,4 +1,4 @@
-*bundler.vim*  Support for Ruby's Bundler
+*bundler.txt*  Support for Ruby's Bundler
 
 Author:  Tim Pope <http://tpo.pe/>
 License: Same terms as Vim itself (see |license|)
