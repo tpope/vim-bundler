@@ -342,11 +342,12 @@ function! s:Open(cmd,gem,lcd)
   elseif a:gem ==# ''
     return a:cmd.' `=bundler#buffer().project().path("Gemfile.lock")`'
   elseif has_key(s:project().gems(),a:gem)
-    let exec = a:cmd.' `=bundler#buffer().project().gems()['.string(a:gem).']`'
+    let path = fnameescape(bundler#buffer().project().gems()[a:gem])
+    let exec = a:cmd.' '.path
     if a:cmd =~# '^pedit' && a:lcd
-      let exec .= '|wincmd P|lcd %|wincmd p'
+      let exec .= '|wincmd P|lcd '.path.'|wincmd p'
     elseif a:lcd
-      let exec .= '|lcd %'
+      let exec .= '|lcd '.path
     endif
     return exec
   else
