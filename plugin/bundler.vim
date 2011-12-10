@@ -195,9 +195,33 @@ endfunction
 call s:add_methods('project',['path'])
 
 function! s:project_gems() dict abort
-  let time = getftime(self.path('Gemfile.lock'))
+  let lock_file = self.path('Gemfile.lock')
+  let time = getftime(lock_file)
   if time != -1 && time != get(self,'_lock_time',-1)
     let self._gems = {}
+
+    let gems = self._gems
+    let lines = readfile(lock_file)
+    let gem_paths = split($GEM_PATH, ':\|;')
+    for line in lines
+      if line !~ '\v\s+[a-zA-Z0-9_-]+\s+\(\d+'
+        continue
+      endif
+      let name = split(line, ' ')[0]
+      let v = substitute(line, '.*(\|).*', '', 'g')
+      for path in gem_paths
+        let dir = join([path, 'gems', name.'-'.v], '/')
+        if isdirectory(dir)
+          let gems[name] = dir
+          break
+        endif
+      endfor
+    endfor
+    if !empty(gems)
+      let self._lock_time = time
+      call self.alter_buffer_paths()
+      return gems
+    endif
 
     " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
     if executable('env')
