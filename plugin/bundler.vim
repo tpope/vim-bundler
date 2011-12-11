@@ -194,33 +194,122 @@ endfunction
 
 call s:add_methods('project',['path'])
 
+function! s:project_ruby_version() dict abort
+  let rvmrc = self.path('.rvmrc')
+  let prefix = ''
+  if filereadable(rvmrc) && executable('rvm')
+    let lines = readfile(rvmrc)
+    for line in lines
+      if line =~ '\v\s*rvm'
+        let prefix = line.' do '
+        break
+      endif
+    endfor
+  endif
+  let version_str = system(prefix.'ruby -v')
+  let result = matchlist(version_str, '\v^(\w+) (\d\.\d)')
+  return result[1].'/'.result[2]
+endfunction
+
+" if gems installed in a special path(bundle install --path gems)
+function! s:project_bundle_path() dict
+  let bundle_config = self.path('.bundle/config')
+  if !filereadable(bundle_config)
+    return ''
+  endif
+  let lines = readfile(bundle_config)
+  for line in lines
+    let kv = split(line, ': ')
+    if len(kv) == 2 && kv[0] == 'BUNDLE_PATH'
+      let bundle_path = kv[1]
+      let full_bundle_path = self.path(bundle_path)
+      if isdirectory(full_bundle_path)
+        let bundle_path = full_bundle_path
+      endif
+      return bundle_path
+    endif
+  endfor
+  return ''
+endfunction
+
+function! s:project_gem_paths() dict abort
+  let bundle_path = self.bundle_path()
+  if bundle_path == ''
+    return split($GEM_PATH, ':\|;')
+  endif
+
+  let gem_paths = split(glob(bundle_path.'/*/*'), '\n')
+  if len(gem_paths) == 1
+    return gem_paths
+  endif
+
+  let ruby_version = self.ruby_version()
+  return filter(gem_paths, 'v:val =~ "'.ruby_version.'"')
+endfunction
+
+function! s:project_load_gems_from_gem_path() dict abort
+  let lines = readfile(self.path('Gemfile.lock'))
+  let gems = {}
+  let gem_paths = self.gem_paths()
+  echo gem_paths
+  let remote = ''
+  let revision = ''
+  for line in lines
+    if line =~ '\v^[A-Z]+$'
+      let type = line
+      continue
+    endif
+    let kv = split(line, ' ')
+    if len(kv) == 2
+      if kv[0] == 'remote:'
+        let remote = kv[1]
+        if !isdirectory(remote)
+          let remote = self.path(remote)
+        endif
+      elseif kv[0] == 'revision:'
+        " git revision
+        let revision = kv[1][0:11]
+      endif
+    endif
+
+    if line !~ '\v\s+[a-zA-Z0-9_-]+\s+\(\d+'
+      continue
+    endif
+    let name = split(line, ' ')[0]
+    let v = substitute(line, '.*(\|).*', '', 'g')
+    for path in gem_paths
+      if type == 'PATH' && remote != ''
+        let dir = remote
+        if isdirectory(self.path(remote))
+          let dir = self.path(remote)
+        endif
+      elseif type == 'GIT' && revision != ''
+        let dir = join([path, 'bundler/gems', name.'-'.revision], '/')
+      elseif type == 'GEM'
+        let dir = join([path, 'gems', name.'-'.v], '/')
+      else
+        continue
+      endif
+      if isdirectory(dir)
+        let gems[name] = dir
+        break
+      endif
+    endfor
+  endfor
+  return gems
+endfunction
+
+call s:add_methods('project',['ruby_version', 'bundle_path', 'gem_paths', 'load_gems_from_gem_path'])
+
 function! s:project_gems() dict abort
   let lock_file = self.path('Gemfile.lock')
   let time = getftime(lock_file)
   if time != -1 && time != get(self,'_lock_time',-1)
-    let self._gems = {}
-
-    let gems = self._gems
-    let lines = readfile(lock_file)
-    let gem_paths = split($GEM_PATH, ':\|;')
-    for line in lines
-      if line !~ '\v\s+[a-zA-Z0-9_-]+\s+\(\d+'
-        continue
-      endif
-      let name = split(line, ' ')[0]
-      let v = substitute(line, '.*(\|).*', '', 'g')
-      for path in gem_paths
-        let dir = join([path, 'gems', name.'-'.v], '/')
-        if isdirectory(dir)
-          let gems[name] = dir
-          break
-        endif
-      endfor
-    endfor
-    if !empty(gems)
+    let self._gems = self.load_gems_from_gem_path()
+    if !empty(self._gems)
       let self._lock_time = time
       call self.alter_buffer_paths()
-      return gems
+      return self._gems
     endif
 
     " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
