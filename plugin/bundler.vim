@@ -194,25 +194,36 @@ endfunction
 
 call s:add_methods('project',['path'])
 
-function! s:project_ruby_version() dict abort
+function! s:project_ruby() dict abort
   let rvmrc = self.path('.rvmrc')
-  let prefix = ''
+
+  " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
+  if executable('env')
+    let prefix = 'env PATH='.s:shellesc($PATH).' '
+  else
+    let prefix = ''
+  endif
+
   if filereadable(rvmrc) && executable('rvm')
     let lines = readfile(rvmrc)
     for line in lines
       if line =~ '\v\s*rvm'
-        let prefix = line.' do '
+        let prefix = prefix.line.' do '
         break
       endif
     endfor
   endif
-  let version_str = system(prefix.'ruby -v')
+  return prefix.'ruby '
+endfunction
+
+function! s:project_ruby_version() dict abort
+  let version_str = system(self.ruby().' -v')
   let result = matchlist(version_str, '\v^(\w+) (\d\.\d)')
   return result[1].'/'.result[2]
 endfunction
 
 " if gems installed in a special path(bundle install --path gems)
-function! s:project_bundle_path() dict
+function! s:project_bundle_path() dict abort
   let bundle_config = self.path('.bundle/config')
   if !filereadable(bundle_config)
     return ''
@@ -235,7 +246,8 @@ endfunction
 function! s:project_gem_paths() dict abort
   let bundle_path = self.bundle_path()
   if bundle_path == ''
-    return split($GEM_PATH, ':\|;')
+    let gem_paths = system(self.ruby().' -e "puts ENV[\"GEM_PATH\"]"')
+    return split(gem_paths, ':\|;')
   endif
 
   let gem_paths = split(glob(bundle_path.'/*/*'), '\n')
@@ -299,7 +311,7 @@ function! s:project_load_gems_from_gem_path() dict abort
   return gems
 endfunction
 
-call s:add_methods('project',['ruby_version', 'bundle_path', 'gem_paths', 'load_gems_from_gem_path'])
+call s:add_methods('project',['ruby', 'ruby_version', 'bundle_path', 'gem_paths', 'load_gems_from_gem_path'])
 
 function! s:project_gems() dict abort
   let lock_file = self.path('Gemfile.lock')
@@ -312,14 +324,7 @@ function! s:project_gems() dict abort
       return self._gems
     endif
 
-    " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
-    if executable('env')
-      let prefix = 'env PATH='.s:shellesc($PATH).' '
-    else
-      let prefix = ''
-    endif
-
-    let output = system(prefix.'ruby -C '.s:shellesc(self.path()).' -rubygems -e "require %{bundler}; Bundler.load.specs.map {|s| puts %[#{s.name} #{s.full_gem_path}]}"')
+    let output = system(self.ruby().' -C '.s:shellesc(self.path()).' -rubygems -e "require %{bundler}; Bundler.load.specs.map {|s| puts %[#{s.name} #{s.full_gem_path}]}"')
     if v:shell_error
       for line in split(output,"\n")
         if line !~ '^\t'
