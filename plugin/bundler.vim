@@ -185,7 +185,7 @@ function! s:project(...) abort
     endif
     return extend(extend(project,s:project_prototype,'keep'),s:abstract_prototype,'keep')
   endif
-  call s:throw('not a Bundler project: '.expand('%:p'))
+  call s:throw('not a Bundler project: '.(a:0 ? a:1 : expand('%')))
 endfunction
 
 function! s:project_path(...) dict abort
@@ -237,7 +237,7 @@ function! s:buffer(...) abort
   if buffer.getvar('bundler_root') !=# ''
     return buffer
   endif
-  call s:throw('not a Bundler project: '.expand('%:p'))
+  call s:throw('not a Bundler project: '.(a:0 ? a:1 : expand('%')))
 endfunction
 
 function! bundler#buffer(...) abort
