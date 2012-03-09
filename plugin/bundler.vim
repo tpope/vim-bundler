@@ -198,11 +198,18 @@ function! s:project_gems() dict abort
   let lock_file = self.path('Gemfile.lock')
   let time = getftime(lock_file)
   if time != -1 && time != get(self,'_lock_time',-1)
+    " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
+    if executable('env')
+      let prefix = 'env PATH='.s:shellesc($PATH).' '
+    else
+      let prefix = ''
+    endif
+
     let self._gems = {}
 
     let gems = self._gems
     let lines = readfile(lock_file)
-    let gem_paths = split($GEM_PATH, ':\|;')
+    let gem_paths = split($GEM_PATH ==# '' ? system(prefix.'ruby -rubygems -e "print Gem.path.join(%(:))"') : $GEM_PATH, ':\|;')
     for line in lines
       if line !~ '\v\s+[a-zA-Z0-9_-]+\s+\(\d+'
         continue
@@ -221,13 +228,6 @@ function! s:project_gems() dict abort
       let self._lock_time = time
       call self.alter_buffer_paths()
       return gems
-    endif
-
-    " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
-    if executable('env')
-      let prefix = 'env PATH='.s:shellesc($PATH).' '
-    else
-      let prefix = ''
     endif
 
     let output = system(prefix.'ruby -C '.s:shellesc(self.path()).' -rubygems -e "require %{bundler}; Bundler.load.specs.map {|s| puts %[#{s.name} #{s.full_gem_path}]}"')
