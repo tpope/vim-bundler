@@ -134,6 +134,11 @@ augroup END
 " }}}1
 " Initialization {{{1
 
+" the filename of your 'tags'
+if !exists('g:bundler_tags_file')
+    let g:bundler_tags_file = "tags"
+endif
+
 function! s:FindBundlerRoot(path) abort
   let path = s:shellslash(a:path)
   let fn = fnamemodify(path,':s?[\/]$??')
@@ -406,7 +411,8 @@ function! s:buffer_alter_paths() dict abort
       call insert(new,remove(new,index))
     endif
     let old = type(self.getvar('bundler_paths')) == type([]) ? self.getvar('bundler_paths') : []
-    for [option, suffix] in [['path', 'lib'], ['tags', 'tags']]
+
+    for [option, suffix] in [['path', 'lib'], ["tags", g:bundler_tags_file]]
       let value = self.getvar('&'.option)
       if !empty(old)
         let drop = s:build_path_option(old,suffix)
