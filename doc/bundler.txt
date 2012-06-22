@@ -43,6 +43,12 @@ COMMANDS                                        *bundler-commands*
 :Bpedit[!] [gem]        Like |:Bopen|, but use a preview window.  Add ! to
                         suppress the |:lcd|.
 
+CONFIGURATION                                   *bundler-configuration*
+
+To set the name of your tags-file (default: tags) use: >
+
+    let g:bundler_tags_file = "name_of_tags_file"
+<
 ABOUT                                           *bundler-about*
 
 Grab the latest version or report a bug on GitHub:
