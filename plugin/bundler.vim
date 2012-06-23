@@ -99,7 +99,7 @@ let s:abstract_prototype = {}
 " Syntax highlighting {{{1
 
 function! s:syntaxfile()
-  syntax keyword rubyGemfileMethod gemspec gem source path git group platforms env
+  syntax keyword rubyGemfileMethod gemspec gem source path git group platforms env ruby
   hi def link rubyGemfileMethod Function
 endfunction
 
