@@ -225,6 +225,7 @@ function! s:project_gems() dict abort
       endfor
       if !has_key(gems, name)
         let failed = 1
+        break
       endif
     endfor
     if !empty(gems) && !exists('failed')
