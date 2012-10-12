@@ -223,8 +223,11 @@ function! s:project_gems() dict abort
           break
         endif
       endfor
+      if !has_key(gems, name)
+        let failed = 1
+      endif
     endfor
-    if !empty(gems)
+    if !empty(gems) && !exists('failed')
       let self._lock_time = time
       call self.alter_buffer_paths()
       return gems
