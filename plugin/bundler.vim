@@ -1,5 +1,6 @@
 " bundler.vim - Support for Ruby's Bundler
 " Maintainer:   Tim Pope <http://tpo.pe/>
+" Version:      1.0
 
 if exists('g:loaded_bundler') || &cp || v:version < 700
   finish
