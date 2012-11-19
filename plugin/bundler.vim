@@ -211,18 +211,45 @@ function! s:project_gems() dict abort
     let gems = self._gems
     let lines = readfile(lock_file)
     let gem_paths = split($GEM_PATH ==# '' ? system(prefix.'ruby -rubygems -e "print Gem.path.join(%(:))"') : $GEM_PATH, ':\|;')
+    let section = ''
+    let name = ''
+    let ver = ''
+    let local = ''
     for line in lines
-      if line !~ '\v\s+[a-zA-Z0-9_-]+\s+\(\d+'
+      if line =~# '^\S'
+        let section = line
+        let name = ''
+        let ver = ''
+        let local = ''
+      elseif section ==# 'GIT' && line =~# '^  remote: '
+        let name = matchstr(line, '.*/\zs.\{-\}\ze\%(\.git\)\=$')
+        let ver = matchstr(line, ': \zs.\{12\}')
+      elseif section ==# 'GIT' && line =~# '^  revision: '
+        let ver = matchstr(line, ': \zs.\{12\}')
+      elseif section ==# 'PATH' && line =~# '^  remote: '
+        let local = matchstr(line, ': \zs.*')
+        if local !~# '^/'
+          let local = simplify(self.path(local))
+        endif
+      endif
+      if line !~# '^    [a-zA-Z0-9_-]\+\s\+(\d\+'
         continue
       endif
-      let name = split(line, ' ')[0]
-      let v = substitute(line, '.*(\|).*', '', 'g')
+      let gem = split(line, ' ')[0]
+      let name = name ==# '' ? gem : name
+      if local !=# ''
+        let gems[name] = dir
+        continue
+      endif
+      let ver = ver ==# '' ? substitute(line, '.*(\|).*', '', 'g') : ver
       for path in gem_paths
-        let dir = join([path, 'gems', name.'-'.v], '/')
-        if isdirectory(dir)
-          let gems[name] = dir
-          break
-        endif
+        for component in ['gems', 'bundler/gems']
+          let dir = join([path, component, name.'-'.ver], '/')
+          if isdirectory(dir)
+            let gems[name] = dir
+            break
+          endif
+        endfor
       endfor
       if !has_key(gems, name)
         let failed = 1
