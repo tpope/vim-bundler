@@ -107,8 +107,8 @@ endfunction
 function! s:syntaxlock()
   syn match gemfilelockHeading  '^[[:upper:]]\+$'
   syn match gemfilelockKey      '^\s\+\zs\S\+:'he=e-1 skipwhite nextgroup=gemfilelockUrl,gemfilelockRevision
-  syn match gemfilelockRevision '[[:alnum:]._-]\+' contained
-  syn match gemfilelockUrl      '\w\+://\S\+' contained
+  syn match gemfilelockRevision '[[:alnum:]._-]\+$' contained
+  syn match gemfilelockUrl      '\w\+\%(://\|@\)\S\+' contained
   syn match gemfilelockGem      '^\s\+\zs[[:alnum:]._-]\+\%([ !]\|$\)\@=' skipwhite nextgroup=gemfilelockVersions,gemfilelockBang
   syn match gemfilelockVersions '([^()]*)' contained contains=gemfilelockVersion
   syn match gemfilelockVersion  '[^,()]*' contained
