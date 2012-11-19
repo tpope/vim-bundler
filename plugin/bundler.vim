@@ -238,7 +238,7 @@ function! s:project_gems() dict abort
       let gem = split(line, ' ')[0]
       let name = name ==# '' ? gem : name
       if local !=# ''
-        let gems[name] = dir
+        let gems[name] = local
         continue
       endif
       let ver = ver ==# '' ? substitute(line, '.*(\|).*', '', 'g') : ver
