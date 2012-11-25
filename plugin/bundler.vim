@@ -236,7 +236,7 @@ function! s:project_gems() dict abort
         continue
       endif
       let gem = split(line, ' ')[0]
-      let name = name ==# '' ? gem : name
+      let name = name ==# '' || section ==# 'GEM' ? gem : name
       if local !=# ''
         let gems[name] = local
         continue
