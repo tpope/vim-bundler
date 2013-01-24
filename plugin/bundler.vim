@@ -1,6 +1,6 @@
 " bundler.vim - Support for Ruby's Bundler
 " Maintainer:   Tim Pope <http://tpo.pe/>
-" Version:      1.0
+" Version:      1.1
 
 if exists('g:loaded_bundler') || &cp || v:version < 700
   finish
@@ -253,6 +253,9 @@ function! s:project_gems() dict abort
       endfor
       if !has_key(gems, name)
         let failed = 1
+        if &verbose
+          echomsg "Couldn't find gem '".name."'. Falling back to Ruby."
+        endif
         break
       endif
     endfor
