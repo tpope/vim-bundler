@@ -245,7 +245,7 @@ function! s:project_gems() dict abort
         let gems[name] = local
         continue
       endif
-      let ver = ver ==# '' ? substitute(line, '.*(\|).*', '', 'g') : ver
+      let ver = ver ==# '' || section ==# 'GEM' ? substitute(line, '.*(\|).*', '', 'g') : ver
       for path in gem_paths
         for component in ['gems', 'bundler/gems']
           let dir = join([path, component, name.'-'.ver], '/')
