@@ -258,7 +258,7 @@ function! s:project_gems() dict abort
       if !has_key(gems, name)
         let failed = 1
         if &verbose
-          echomsg "Couldn't find gem '".name."'. Falling back to Ruby."
+          unsilent echomsg "Couldn't find gem ".name." ".ver.". Falling back to Ruby."
         endif
         break
       endif
