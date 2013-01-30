@@ -189,6 +189,10 @@ function! s:project(...) abort
   call s:throw('not a Bundler project: '.(a:0 ? a:1 : expand('%')))
 endfunction
 
+function! bundler#project(...)
+  return a:0 ? s:project(a:1) : s:project()
+endfunction
+
 function! s:project_path(...) dict abort
   return join([self.root]+a:000,'/')
 endfunction
