@@ -189,7 +189,7 @@ function! s:project(...) abort
   call s:throw('not a Bundler project: '.(a:0 ? a:1 : expand('%')))
 endfunction
 
-function! bundler#project(...)
+function! bundler#project(...) abort
   return a:0 ? s:project(a:1) : s:project()
 endfunction
 
