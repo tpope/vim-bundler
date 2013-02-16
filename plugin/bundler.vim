@@ -214,7 +214,7 @@ function! s:project_gems() dict abort
 
     let gems = self._gems
     let lines = readfile(lock_file)
-    let gem_paths = split($GEM_PATH ==# '' ? system(prefix.'ruby -rubygems -e "print Gem.path.join(%(:))"') : $GEM_PATH, ':\|;')
+    let gem_paths = split($GEM_PATH ==# '' ? system(prefix.'ruby -rubygems -e "print Gem.path.join(%(;))"') : $GEM_PATH, '[:;]')
     let section = ''
     let name = ''
     let ver = ''
