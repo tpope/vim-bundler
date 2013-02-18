@@ -219,6 +219,7 @@ function! s:project_gems() dict abort
     let name = ''
     let ver = ''
     let local = ''
+    let failed = []
     for line in lines
       if line =~# '^\S'
         let section = line
@@ -256,17 +257,18 @@ function! s:project_gems() dict abort
         endfor
       endfor
       if !has_key(gems, name)
-        let failed = 1
-        if &verbose
-          unsilent echomsg "Couldn't find gem ".name." ".ver.". Falling back to Ruby."
-        endif
-        break
+        let failed += [name]
       endif
     endfor
-    if !empty(gems) && !exists('failed')
+    if !empty(gems) && empty(failed)
       let self._lock_time = time
       call self.alter_buffer_paths()
       return gems
+    endif
+
+    if &verbose
+      let label = empty(gems) ? 'any gems' : len(failed) == 1 ? 'gem ' : 'gems '
+      unsilent echomsg "Couldn't find ".label.string(failed)[1:-2].". Falling back to Ruby."
     endif
 
     let output = system(prefix.'ruby -C '.s:shellesc(self.path()).' -rubygems -e "require %{bundler}; Bundler.load.specs.map {|s| puts %[#{s.name} #{s.full_gem_path}]}"')
