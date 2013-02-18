@@ -212,9 +212,14 @@ function! s:project_gems() dict abort
 
     let self._gems = {}
 
-    let gems = self._gems
-    let lines = readfile(lock_file)
-    let gem_paths = split($GEM_PATH ==# '' ? system(prefix.'ruby -rubygems -e "print Gem.path.join(%(;))"') : $GEM_PATH, '[:;]')
+    let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir" : "chdir"
+    let cwd = getcwd()
+    try
+      exe chdir s:fnameescape(self.path())
+      let gem_paths = split($GEM_PATH ==# '' ? system(prefix.'ruby -rubygems -e "print Gem.path.join(%(;))"') : $GEM_PATH, '[:;]')
+    finally
+      exe chdir s:fnameescape(cwd)
+    endtry
     if filereadable(self.path('.bundle/config'))
       let body = join(readfile(self.path('.bundle/config')), "\n")
       let bundle_path = matchstr(body, "\\CBUNDLE_PATH: \\zs[^\n]*")
@@ -222,6 +227,9 @@ function! s:project_gems() dict abort
         let gem_paths = [self.path(bundle_path, 'ruby', matchstr(get(gem_paths, 0, '1.9.1'), '[0-9.]\+$'))]
       endif
     endif
+
+    let gems = self._gems
+    let lines = readfile(lock_file)
     let section = ''
     let name = ''
     let ver = ''
@@ -278,7 +286,12 @@ function! s:project_gems() dict abort
       unsilent echomsg "Couldn't find ".label.string(failed)[1:-2].". Falling back to Ruby."
     endif
 
-    let output = system(prefix.'ruby -C '.s:shellesc(self.path()).' -rubygems -e "require %{bundler}; Bundler.load.specs.map {|s| puts %[#{s.name} #{s.full_gem_path}]}"')
+    try
+      exe chdir s:fnameescape(self.path())
+      let output = system(prefix.'ruby -rubygems -e "require %{bundler}; Bundler.load.specs.map {|s| puts %[#{s.name} #{s.full_gem_path}]}"')
+    finally
+      exe chdir s:fnameescape(cwd)
+    endtry
     if v:shell_error
       for line in split(output,"\n")
         if line !~ '^\t'
