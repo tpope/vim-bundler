@@ -215,6 +215,13 @@ function! s:project_gems() dict abort
     let gems = self._gems
     let lines = readfile(lock_file)
     let gem_paths = split($GEM_PATH ==# '' ? system(prefix.'ruby -rubygems -e "print Gem.path.join(%(;))"') : $GEM_PATH, '[:;]')
+    if filereadable(self.path('.bundle/config'))
+      let body = join(readfile(self.path('.bundle/config')), "\n")
+      let bundle_path = matchstr(body, "\\CBUNDLE_PATH: \\zs[^\n]*")
+      if !empty(bundle_path)
+        let gem_paths = [self.path(bundle_path, 'ruby', matchstr(get(gem_paths, 0, '1.9.1'), '[0-9.]\+$'))]
+      endif
+    endif
     let section = ''
     let name = ''
     let ver = ''
