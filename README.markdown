@@ -1,5 +1,4 @@
-bundler.vim
-===========
+# bundler.vim
 
 This is a lightweight bag of Vim goodies for
 [Bundler](http://gembundler.com), best accompanied by
@@ -14,8 +13,7 @@ This is a lightweight bag of Vim goodies for
   [gem-ctags](https://github.com/tpope/gem-ctags)!)
 * Syntax highlighting for `Gemfile` and `Gemfile.lock`.
 
-Installation
-------------
+## Installation
 
 If you don't have a preferred installation method, I recommend
 installing [pathogen.vim](https://github.com/tpope/vim-pathogen), and
@@ -27,8 +25,7 @@ then simply copy and paste:
 Once help tags have been generated, you can view the manual with
 `:help bundler`.
 
-FAQ
----
+## FAQ
 
 > I installed the plugin and started Vim.  Why don't any of the commands
 > exist?
@@ -41,14 +38,12 @@ directory.  Edit a file that's covered by a `Gemfile`.
 This plugin cares about the current file, not the current working
 directory.  Edit a file that's covered by a `Gemfile`.
 
-Contributing
-------------
+## Contributing
 
 See the contribution guidelines for
 [rails.vim](https://github.com/tpope/vim-rails#readme).
 
-Self-Promotion
---------------
+## Self-Promotion
 
 Like bundler.vim? Follow the repository on
 [GitHub](https://github.com/tpope/vim-bundler) and vote for it on
@@ -57,8 +52,7 @@ you're feeling especially charitable, follow [tpope](http://tpo.pe/) on
 [Twitter](http://twitter.com/tpope) and
 [GitHub](https://github.com/tpope).
 
-License
--------
+## License
 
 Copyright (c) Tim Pope.  Distributed under the same terms as Vim itself.
 See `:help license`.
