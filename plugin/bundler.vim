@@ -227,6 +227,7 @@ function! s:project_gems(...) dict abort
 
     let self._found = {}
     let self._missing = {}
+    let self._versions = {}
 
     let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir" : "chdir"
     let cwd = getcwd()
@@ -246,6 +247,7 @@ function! s:project_gems(...) dict abort
 
     let gems = self._found
     let missing = self._missing
+    let versions = self._versions
     let lines = readfile(lock_file)
     let section = ''
     let name = ''
@@ -276,6 +278,7 @@ function! s:project_gems(...) dict abort
       endif
       let name = split(line, ' ')[0]
       let ver = substitute(line, '.*(\|).*', '', 'g')
+      let versions[name] = ver
 
       if !empty(local)
         let files = split(glob(local . '/*/' . name . '.gemspec'), "\n")
@@ -366,7 +369,12 @@ function! s:project_all() dict abort
   return extend(self.gems(), get(self, '_missing', {}))
 endfunction
 
-call s:add_methods('project', ['gems', 'found', 'missing', 'all'])
+function! s:project_versions() dict abort
+  call self.gems()
+  return copy(get(self, '_versions', {}))
+endfunction
+
+call s:add_methods('project', ['gems', 'found', 'missing', 'all', 'versions'])
 
 " }}}1
 " Buffer {{{1
