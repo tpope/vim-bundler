@@ -123,6 +123,13 @@ function! s:syntaxlock()
   hi def link gemfilelockBang     Special
 endfunction
 
+function! s:setuplock()
+  nnoremap <silent><buffer> gf         :Bopen    <C-R><C-F><CR>
+  nnoremap <silent><buffer> <C-W>f     :Bsplit   <C-R><C-F><CR>
+  nnoremap <silent><buffer> <C-W><C-F> :Bsplit   <C-R><C-F><CR>
+  nnoremap <silent><buffer> <C-W>gf    :Btabedit <C-R><C-F><CR>
+endfunction
+
 augroup bundler_syntax
   autocmd!
   autocmd BufNewFile,BufReadPost */.bundle/config set filetype=yaml
@@ -131,6 +138,8 @@ augroup bundler_syntax
   autocmd BufNewFile,BufRead [Gg]emfile.lock setf gemfilelock
   autocmd FileType gemfilelock set suffixesadd=.rb
   autocmd Syntax gemfilelock call s:syntaxlock()
+  autocmd FileType gemfilelock    call s:setuplock()
+  autocmd User Rails/Gemfile.lock call s:setuplock()
 augroup END
 
 " }}}1
