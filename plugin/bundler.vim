@@ -374,7 +374,12 @@ function! s:project_versions() dict abort
   return copy(get(self, '_versions', {}))
 endfunction
 
-call s:add_methods('project', ['gems', 'found', 'missing', 'all', 'versions'])
+function! s:project_has(gem) dict abort
+  call self.gems()
+  return has_key(get(self, '_versions', {}), a:gem)
+endfunction
+
+call s:add_methods('project', ['gems', 'found', 'missing', 'all', 'versions', 'has'])
 
 " }}}1
 " Buffer {{{1
