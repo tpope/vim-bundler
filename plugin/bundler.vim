@@ -285,7 +285,7 @@ function! s:project_gems(...) dict abort
 
       else
         for path in gem_paths
-          let components = path . '/gems/' . name . '-' . ver
+          let dir = path . '/gems/' . name . '-' . ver
           if isdirectory(dir)
             let gems[name] = dir
             break
