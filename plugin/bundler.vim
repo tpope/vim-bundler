@@ -175,7 +175,7 @@ augroup END
 let s:project_prototype = {}
 let s:projects = {}
 
-function! s:project(...) abort
+function! bundler#project(...) abort
   let dir = a:0 ? a:1 : (exists('b:bundler_root') && b:bundler_root !=# '' ? b:bundler_root : s:FindBundlerRoot(expand('%:p')))
   if dir !=# ''
     if has_key(s:projects,dir)
@@ -186,11 +186,16 @@ function! s:project(...) abort
     endif
     return extend(extend(project,s:project_prototype,'keep'),s:abstract_prototype,'keep')
   endif
-  call s:throw('not a Bundler project: '.(a:0 ? a:1 : expand('%')))
+  return {}
 endfunction
 
-function! bundler#project(...) abort
-  return a:0 ? s:project(a:1) : s:project()
+function! s:project(...) abort
+  let project = a:0 ? bundler#project(a:1) : bundler#project()
+  if empty(project)
+    call s:throw('not a Bundler project: '.(a:0 ? a:1 : expand('%')))
+  else
+    return project
+  endif
 endfunction
 
 function! s:project_path(...) dict abort
