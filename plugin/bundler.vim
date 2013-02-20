@@ -199,10 +199,10 @@ endfunction
 
 call s:add_methods('project',['path'])
 
-function! s:project_gems() dict abort
+function! s:project_gems(...) dict abort
   let lock_file = self.path('Gemfile.lock')
   let time = getftime(lock_file)
-  if time != -1 && time != get(self,'_lock_time',-1)
+  if a:0 && a:1 ==# 'refresh' || time != -1 && time != get(self,'_lock_time',-1)
     " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
     if executable('env')
       let prefix = 'env PATH='.s:shellesc($PATH).' '
@@ -233,6 +233,8 @@ function! s:project_gems() dict abort
     let section = ''
     let name = ''
     let ver = ''
+    let repo = ''
+    let revision = ''
     let local = ''
     let failed = []
     for line in lines
@@ -240,12 +242,13 @@ function! s:project_gems() dict abort
         let section = line
         let name = ''
         let ver = ''
+        let repo = ''
+        let revision = ''
         let local = ''
       elseif section ==# 'GIT' && line =~# '^  remote: '
-        let name = matchstr(line, '.*/\zs.\{-\}\ze\%(\.git\)\=$')
-        let ver = matchstr(line, ': \zs.\{12\}')
+        let repo = matchstr(line, '.*/\zs.\{-\}\ze\%(\.git\)\=$')
       elseif section ==# 'GIT' && line =~# '^  revision: '
-        let ver = matchstr(line, ': \zs.\{12\}')
+        let revision = matchstr(line, ': \zs.\{12\}')
       elseif section ==# 'PATH' && line =~# '^  remote: '
         let local = matchstr(line, ': \zs.*')
         if local !~# '^/'
@@ -255,22 +258,41 @@ function! s:project_gems() dict abort
       if line !~# '^    [a-zA-Z0-9_-]\+\s\+(\d\+'
         continue
       endif
-      let gem = split(line, ' ')[0]
-      let name = name ==# '' || section ==# 'GEM' ? gem : name
-      if local !=# ''
-        let gems[name] = local
-        continue
-      endif
-      let ver = ver ==# '' || section ==# 'GEM' ? substitute(line, '.*(\|).*', '', 'g') : ver
-      for path in gem_paths
-        for component in ['gems', 'bundler/gems']
-          let dir = join([path, component, name.'-'.ver], '/')
+      let name = split(line, ' ')[0]
+      let ver = substitute(line, '.*(\|).*', '', 'g')
+
+      if !empty(local)
+        let files = split(glob(local . '/*/' . name . '.gemspec'), "\n")
+        if empty(files)
+          let gems[name] = local
+        else
+          let gems[name] = files[0][0 : -10-strlen(name)]
+        endif
+
+      elseif !empty(repo)
+        for path in gem_paths
+          let dir = path . '/bundler/gems/' . repo . '-' . revision
+          if isdirectory(dir)
+            let files = split(glob(dir . '/*/' . name . '.gemspec'), "\n")
+            if empty(files)
+              let gems[name] = dir
+            else
+              let gems[name] = files[0][0 : -10-strlen(name)]
+            endif
+            break
+          endif
+        endfor
+
+      else
+        for path in gem_paths
+          let components = path . '/gems/' . name . '-' . ver
           if isdirectory(dir)
             let gems[name] = dir
             break
           endif
         endfor
-      endfor
+      endif
+
       if !has_key(gems, name)
         let failed += [name]
       endif
