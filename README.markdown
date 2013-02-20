@@ -11,7 +11,9 @@ This is a lightweight bag of Vim goodies for
 * `'path'` and `'tags'` are automatically altered to include all gems
   from your bundle.  (Generate those tags with
   [gem-ctags](https://github.com/tpope/gem-ctags)!)
-* Syntax highlighting for `Gemfile` and `Gemfile.lock`.
+* Highlight Bundler keywords in `Gemfile`.
+* Support for `gf` in `Gemfile.lock`, plus syntax highlighting that
+  distinguishes between installed and missing gems.
 
 ## Installation
 

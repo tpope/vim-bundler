@@ -105,20 +105,31 @@ function! s:syntaxfile()
 endfunction
 
 function! s:syntaxlock()
+  setlocal iskeyword+=-,.
   syn match gemfilelockHeading  '^[[:upper:]]\+$'
   syn match gemfilelockKey      '^\s\+\zs\S\+:'he=e-1 skipwhite nextgroup=gemfilelockUrl,gemfilelockRevision
   syn match gemfilelockRevision '[[:alnum:]._-]\+$' contained
   syn match gemfilelockUrl      '\w\+\%(://\|@\)\S\+' contained
-  syn match gemfilelockGem      '^\s\+\zs[[:alnum:]._-]\+\%([ !]\|$\)\@=' skipwhite nextgroup=gemfilelockVersions,gemfilelockBang
+  syn match gemfilelockGem      '^\s\+\zs[[:alnum:]._-]\+\%([ !]\|$\)\@=' contains=gemfilelockFound,gemfilelockMissing skipwhite nextgroup=gemfilelockVersions,gemfilelockBang
   syn match gemfilelockVersions '([^()]*)' contained contains=gemfilelockVersion
   syn match gemfilelockVersion  '[^,()]*' contained
   syn match gemfilelockBang     '!' contained
+  if !empty(bundler#project())
+    exe 'syn match gemfilelockFound "\<\%(bundler\|' . join(keys(s:project().found()), '\|') . '\)\>" contained'
+    exe 'syn match gemfilelockMissing "\<\%(bundler\|' . join(keys(s:project().missing()), '\|') . '\)\>" contained'
+  else
+    exe 'syn match gemfilelockFound "\<\%(\S*\)\>" contained'
+  endif
+  syn match gemfilelockHeading  '^PLATFORMS$' nextgroup=gemfilelockPlatform skipnl skipwhite
+  syn match gemfileLockPlatform '^  \zs[[:alnum:]._-]\+$' contained nextgroup=gemfilelockPlatform skipnl skipwhite
 
   hi def link gemfilelockHeading  PreProc
+  hi def link gemfilelockPlatform Conditional
   hi def link gemfilelockKey      Identifier
   hi def link gemfilelockRevision Number
   hi def link gemfilelockUrl      String
-  hi def link gemfilelockGem      Statement
+  hi def link gemfilelockFound    Statement
+  hi def link gemfilelockMissing  Error
   hi def link gemfilelockVersion  Type
   hi def link gemfilelockBang     Special
 endfunction
@@ -566,6 +577,9 @@ function! s:project_alter_buffer_paths() dict abort
   for bufnr in range(1,bufnr('$'))
     if getbufvar(bufnr,'bundler_root') ==# self.path()
       let vim_parsing_quirk = s:buffer(bufnr).alter_paths()
+    endif
+    if getbufvar(bufnr, '&syntax') ==# 'gemfilelock'
+      call setbufvar(bufnr, '&syntax', 'gemfilelock')
     endif
   endfor
 endfunction
