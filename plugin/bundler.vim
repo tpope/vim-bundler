@@ -225,7 +225,8 @@ function! s:project_gems(...) dict abort
       let prefix = ''
     endif
 
-    let self._gems = {}
+    let self._found = {}
+    let self._missing = {}
 
     let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir" : "chdir"
     let cwd = getcwd()
@@ -243,7 +244,8 @@ function! s:project_gems(...) dict abort
       endif
     endif
 
-    let gems = self._gems
+    let gems = self._found
+    let missing = self._missing
     let lines = readfile(lock_file)
     let section = ''
     let name = ''
@@ -251,7 +253,6 @@ function! s:project_gems(...) dict abort
     let repo = ''
     let revision = ''
     let local = ''
-    let failed = []
     for line in lines
       if line =~# '^\S'
         let section = line
@@ -309,10 +310,10 @@ function! s:project_gems(...) dict abort
       endif
 
       if !has_key(gems, name)
-        let failed += [name]
+        let missing[name] = ''
       endif
     endfor
-    if !exists('g:bundler_strict') || !empty(gems) && empty(failed)
+    if !exists('g:bundler_strict') || !empty(gems) && empty(missing)
       let self._lock_time = time
       call self.alter_buffer_paths()
       return gems
@@ -336,18 +337,36 @@ function! s:project_gems(...) dict abort
         endif
       endfor
     else
-      let self._gems = {}
+      let self._found = {}
       for line in split(output,"\n")
-        let self._gems[split(line,' ')[0]] = matchstr(line,' \zs.*')
+        let name = split(line, ' ')[0]
+        let self._found[name] = matchstr(line,' \zs.*')
+        if has_key(missing, name)
+          call remove(missing, name)
+        endif
       endfor
       let self._lock_time = time
       call self.alter_buffer_paths()
     endif
   endif
-  return get(self,'_gems',{})
+  return copy(get(self,'_found',{}))
 endfunction
 
-call s:add_methods('project',['gems'])
+function! s:project_found() dict abort
+  return self.gems()
+endfunction
+
+function! s:project_missing() dict abort
+  call self.gems()
+  return copy(get(self, '_missing', {}))
+endfunction
+
+function! s:project_all() dict abort
+  call self.gems()
+  return extend(self.gems(), get(self, '_missing', {}))
+endfunction
+
+call s:add_methods('project', ['gems', 'found', 'missing', 'all'])
 
 " }}}1
 " Buffer {{{1
@@ -427,7 +446,7 @@ endfunction
 
 function! s:BundleComplete(A,L,P)
   if a:L =~# '^\S\+\s\+\%(show\|update\) '
-    return s:completion_filter(keys(s:project().gems()),a:A)
+    return s:completion_filter(keys(s:project().found()),a:A)
   endif
   return s:completion_filter(['install','update','exec','package','config','check','list','show','outdated','console','viz','benchmark'],a:A)
 endfunction
@@ -465,14 +484,18 @@ function! s:Open(cmd,gem,lcd)
   elseif a:gem ==# ''
     return a:cmd.' `=bundler#buffer().project().path("Gemfile.lock")`'
   else
-    if !has_key(s:project().gems(), a:gem)
+    if !has_key(s:project().found(), a:gem)
       call s:project().gems('refresh')
     endif
-    if !has_key(s:project().gems(), a:gem)
-      let v:errmsg = "Can't find gem \"".a:gem."\" in bundle"
+    if !has_key(s:project().found(), a:gem)
+      if has_key(s:project().missing(), a:gem)
+        let v:errmsg = "Gem \"".a:gem."\" is in bundle but not installed"
+      else
+        let v:errmsg = "Gem \"".a:gem."\" is not in bundle"
+      endif
       return 'echoerr v:errmsg'
     endif
-    let path = fnameescape(bundler#buffer().project().gems()[a:gem])
+    let path = fnameescape(bundler#buffer().project().found()[a:gem])
     let exec = a:cmd.' '.path
     if a:cmd =~# '^pedit' && a:lcd
       let exec .= '|wincmd P|lcd '.path.'|wincmd p'
@@ -484,7 +507,7 @@ function! s:Open(cmd,gem,lcd)
 endfunction
 
 function! s:OpenComplete(A,L,P)
-  return s:completion_filter(keys(s:project().gems()),a:A)
+  return s:completion_filter(keys(s:project().found()),a:A)
 endfunction
 
 call s:command("-bar -bang -nargs=? -complete=customlist,s:OpenComplete Bopen :execute s:Open('edit<bang>',<q-args>,1)")
@@ -503,7 +526,7 @@ endfunction
 
 function! s:buffer_alter_paths() dict abort
   if self.getvar('&suffixesadd') =~# '\.rb\>'
-    let new = sort(values(self.project().gems()))
+    let new = sort(values(self.project().found()))
     let index = index(new, self.project().path())
     if index > 0
       call insert(new,remove(new,index))
