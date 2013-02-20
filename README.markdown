@@ -38,11 +38,6 @@ directory.  Edit a file that's covered by a `Gemfile`.
 This plugin cares about the current file, not the current working
 directory.  Edit a file that's covered by a `Gemfile`.
 
-## Contributing
-
-See the contribution guidelines for
-[rails.vim](https://github.com/tpope/vim-rails#readme).
-
 ## Self-Promotion
 
 Like bundler.vim? Follow the repository on
