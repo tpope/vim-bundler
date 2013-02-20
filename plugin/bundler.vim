@@ -303,7 +303,7 @@ function! s:project_gems(...) dict abort
         let failed += [name]
       endif
     endfor
-    if !empty(gems) && empty(failed)
+    if !exists('g:bundler_strict') || !empty(gems) && empty(failed)
       let self._lock_time = time
       call self.alter_buffer_paths()
       return gems
@@ -327,6 +327,7 @@ function! s:project_gems(...) dict abort
         endif
       endfor
     else
+      let self._gems = {}
       for line in split(output,"\n")
         let self._gems[split(line,' ')[0]] = matchstr(line,' \zs.*')
       endfor
@@ -442,7 +443,7 @@ augroup bundler_make
   autocmd QuickFixCmdPost *make*
         \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
         \   call s:pop_command() |
-        \   execute 'call s:project().gems()' |
+        \   execute 'call s:project().gems(exists("g:bundler_strict") ? "" : "refresh")' |
         \ endif
 augroup END
 
@@ -454,7 +455,14 @@ function! s:Open(cmd,gem,lcd)
     return a:cmd.' `=bundler#buffer().project().path("Gemfile")`'
   elseif a:gem ==# ''
     return a:cmd.' `=bundler#buffer().project().path("Gemfile.lock")`'
-  elseif has_key(s:project().gems(),a:gem)
+  else
+    if !has_key(s:project().gems(), a:gem)
+      call s:project().gems('refresh')
+    endif
+    if !has_key(s:project().gems(), a:gem)
+      let v:errmsg = "Can't find gem \"".a:gem."\" in bundle"
+      return 'echoerr v:errmsg'
+    endif
     let path = fnameescape(bundler#buffer().project().gems()[a:gem])
     let exec = a:cmd.' '.path
     if a:cmd =~# '^pedit' && a:lcd
@@ -463,9 +471,6 @@ function! s:Open(cmd,gem,lcd)
       let exec .= '|lcd '.path
     endif
     return exec
-  else
-    let v:errmsg = "Can't find gem \"".a:gem."\" in bundle"
-    return 'echoerr v:errmsg'
   endif
 endfunction
 
