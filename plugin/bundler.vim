@@ -283,10 +283,10 @@ function! s:project_paths(...) dict abort
       endif
     endif
 
-    for config in self._locked.git
-      for [name, ver] in items(config.versions)
+    for source in self._locked.git
+      for [name, ver] in items(source.versions)
         for path in gem_paths
-          let dir = path . '/bundler/gems/' . matchstr(config.remote, '.*/\zs.\{-\}\ze\%(\.git\)\=$') . '-' . config.revision[0:11]
+          let dir = path . '/bundler/gems/' . matchstr(source.remote, '.*/\zs.\{-\}\ze\%(\.git\)\=$') . '-' . source.revision[0:11]
           if isdirectory(dir)
             let files = split(glob(dir . '/*/' . name . '.gemspec'), "\n")
             if empty(files)
@@ -300,12 +300,12 @@ function! s:project_paths(...) dict abort
       endfor
     endfor
 
-    for config in self._locked.path
-      for [name, ver] in items(config.versions)
-        if config.remote !~# '^/'
-          let local = simplify(self.path(config.remote))
+    for source in self._locked.path
+      for [name, ver] in items(source.versions)
+        if source.remote !~# '^/'
+          let local = simplify(self.path(source.remote))
         else
-          let local = config.remote
+          let local = source.remote
         endif
         let files = split(glob(local . '/*/' . name . '.gemspec'), "\n")
         if empty(files)
@@ -316,8 +316,8 @@ function! s:project_paths(...) dict abort
       endfor
     endfor
 
-    for config in self._locked.gem
-      for [name, ver] in items(config.versions)
+    for source in self._locked.gem
+      for [name, ver] in items(source.versions)
         for path in gem_paths
           let dir = path . '/gems/' . name . '-' . ver
           if isdirectory(dir)
