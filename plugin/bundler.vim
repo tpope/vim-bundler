@@ -107,9 +107,10 @@ endfunction
 function! s:syntaxlock()
   setlocal iskeyword+=-,.
   syn match gemfilelockHeading  '^[[:upper:]]\+$'
-  syn match gemfilelockKey      '^\s\+\zs\S\+:'he=e-1 skipwhite nextgroup=gemfilelockUrl,gemfilelockRevision
+  syn match gemfilelockKey      '^\s\+\zs\S\+:'he=e-1 skipwhite nextgroup=gemfilelockRevision
+  syn match gemfilelockKey      'remote:'he=e-1 skipwhite nextgroup=gemfilelockRemote
+  syn match gemfilelockRemote   '\S\+' contained
   syn match gemfilelockRevision '[[:alnum:]._-]\+$' contained
-  syn match gemfilelockUrl      '\w\+\%(://\|@\)\S\+' contained
   syn match gemfilelockGem      '^\s\+\zs[[:alnum:]._-]\+\%([ !]\|$\)\@=' contains=gemfilelockFound,gemfilelockMissing skipwhite nextgroup=gemfilelockVersions,gemfilelockBang
   syn match gemfilelockVersions '([^()]*)' contained contains=gemfilelockVersion
   syn match gemfilelockVersion  '[^,()]*' contained
@@ -126,8 +127,8 @@ function! s:syntaxlock()
   hi def link gemfilelockHeading  PreProc
   hi def link gemfilelockPlatform Conditional
   hi def link gemfilelockKey      Identifier
+  hi def link gemfilelockRemote   String
   hi def link gemfilelockRevision Number
-  hi def link gemfilelockUrl      String
   hi def link gemfilelockFound    Statement
   hi def link gemfilelockMissing  Error
   hi def link gemfilelockVersion  Type
