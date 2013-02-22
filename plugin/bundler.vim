@@ -115,8 +115,8 @@ function! s:syntaxlock()
   syn match gemfilelockVersion  '[^,()]*' contained
   syn match gemfilelockBang     '!' contained
   if !empty(bundler#project())
-    exe 'syn match gemfilelockFound "\<\%(bundler\|' . join(keys(s:project().found()), '\|') . '\)\>" contained'
-    exe 'syn match gemfilelockMissing "\<\%(bundler\|' . join(keys(s:project().missing()), '\|') . '\)\>" contained'
+    exe 'syn match gemfilelockFound "\<\%(bundler\|' . join(keys(s:project().paths()), '\|') . '\)\>" contained'
+    exe 'syn match gemfilelockMissing "\<\%(' . join(keys(filter(s:project().versions(), '!has_key(s:project().paths(), v:key)')), '\|') . '\)\>" contained'
   else
     exe 'syn match gemfilelockFound "\<\%(\S*\)\>" contained'
   endif
@@ -236,8 +236,7 @@ function! s:project_gems(...) dict abort
       let prefix = ''
     endif
 
-    let self._found = {}
-    let self._missing = {}
+    let self._paths = {}
     let self._versions = {}
 
     let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir" : "chdir"
@@ -256,8 +255,7 @@ function! s:project_gems(...) dict abort
       endif
     endif
 
-    let gems = self._found
-    let missing = self._missing
+    let paths = self._paths
     let versions = self._versions
     let lines = readfile(lock_file)
     let section = ''
@@ -294,9 +292,9 @@ function! s:project_gems(...) dict abort
       if !empty(local)
         let files = split(glob(local . '/*/' . name . '.gemspec'), "\n")
         if empty(files)
-          let gems[name] = local
+          let paths[name] = local
         else
-          let gems[name] = files[0][0 : -10-strlen(name)]
+          let paths[name] = files[0][0 : -10-strlen(name)]
         endif
 
       elseif !empty(repo)
@@ -305,9 +303,9 @@ function! s:project_gems(...) dict abort
           if isdirectory(dir)
             let files = split(glob(dir . '/*/' . name . '.gemspec'), "\n")
             if empty(files)
-              let gems[name] = dir
+              let paths[name] = dir
             else
-              let gems[name] = files[0][0 : -10-strlen(name)]
+              let paths[name] = files[0][0 : -10-strlen(name)]
             endif
             break
           endif
@@ -317,20 +315,16 @@ function! s:project_gems(...) dict abort
         for path in gem_paths
           let dir = path . '/gems/' . name . '-' . ver
           if isdirectory(dir)
-            let gems[name] = dir
+            let paths[name] = dir
             break
           endif
         endfor
       endif
-
-      if !has_key(gems, name)
-        let missing[name] = ''
-      endif
     endfor
-    if !exists('g:bundler_strict') || !empty(gems) && empty(missing)
+    if !exists('g:bundler_strict') || len(versions) == len(gems)
       let self._lock_time = time
       call self.alter_buffer_paths()
-      return gems
+      return paths
     endif
 
     if &verbose
@@ -351,33 +345,20 @@ function! s:project_gems(...) dict abort
         endif
       endfor
     else
-      let self._found = {}
+      let self._paths = {}
       for line in split(output,"\n")
         let name = split(line, ' ')[0]
-        let self._found[name] = matchstr(line,' \zs.*')
-        if has_key(missing, name)
-          call remove(missing, name)
-        endif
+        let self._paths[name] = matchstr(line,' \zs.*')
       endfor
       let self._lock_time = time
       call self.alter_buffer_paths()
     endif
   endif
-  return copy(get(self,'_found',{}))
+  return copy(get(self,'_paths',{}))
 endfunction
 
-function! s:project_found() dict abort
+function! s:project_paths() dict abort
   return self.gems()
-endfunction
-
-function! s:project_missing() dict abort
-  call self.gems()
-  return copy(get(self, '_missing', {}))
-endfunction
-
-function! s:project_all() dict abort
-  call self.gems()
-  return extend(self.gems(), get(self, '_missing', {}))
 endfunction
 
 function! s:project_versions() dict abort
@@ -390,7 +371,7 @@ function! s:project_has(gem) dict abort
   return has_key(get(self, '_versions', {}), a:gem)
 endfunction
 
-call s:add_methods('project', ['gems', 'found', 'missing', 'all', 'versions', 'has'])
+call s:add_methods('project', ['gems', 'paths', 'versions', 'has'])
 
 " }}}1
 " Buffer {{{1
@@ -470,7 +451,7 @@ endfunction
 
 function! s:BundleComplete(A,L,P)
   if a:L =~# '^\S\+\s\+\%(show\|update\) '
-    return s:completion_filter(keys(s:project().found()),a:A)
+    return s:completion_filter(keys(s:project().paths()),a:A)
   endif
   return s:completion_filter(['install','update','exec','package','config','check','list','show','outdated','console','viz','benchmark'],a:A)
 endfunction
@@ -508,18 +489,18 @@ function! s:Open(cmd,gem,lcd)
   elseif a:gem ==# ''
     return a:cmd.' `=bundler#buffer().project().path("Gemfile.lock")`'
   else
-    if !has_key(s:project().found(), a:gem)
+    if !has_key(s:project().paths(), a:gem)
       call s:project().gems('refresh')
     endif
-    if !has_key(s:project().found(), a:gem)
-      if has_key(s:project().missing(), a:gem)
+    if !has_key(s:project().paths(), a:gem)
+      if has_key(s:project().versions(), a:gem)
         let v:errmsg = "Gem \"".a:gem."\" is in bundle but not installed"
       else
         let v:errmsg = "Gem \"".a:gem."\" is not in bundle"
       endif
       return 'echoerr v:errmsg'
     endif
-    let path = fnameescape(bundler#buffer().project().found()[a:gem])
+    let path = fnameescape(bundler#buffer().project().paths()[a:gem])
     let exec = a:cmd.' '.path
     if a:cmd =~# '^pedit' && a:lcd
       let exec .= '|wincmd P|lcd '.path.'|wincmd p'
@@ -531,7 +512,7 @@ function! s:Open(cmd,gem,lcd)
 endfunction
 
 function! s:OpenComplete(A,L,P)
-  return s:completion_filter(keys(s:project().found()),a:A)
+  return s:completion_filter(keys(s:project().paths()),a:A)
 endfunction
 
 call s:command("-bar -bang -nargs=? -complete=customlist,s:OpenComplete Bopen :execute s:Open('edit<bang>',<q-args>,1)")
@@ -550,7 +531,7 @@ endfunction
 
 function! s:buffer_alter_paths() dict abort
   if self.getvar('&suffixesadd') =~# '\.rb\>'
-    let new = sort(values(self.project().found()))
+    let new = sort(values(self.project().paths()))
     let index = index(new, self.project().path())
     if index > 0
       call insert(new,remove(new,index))

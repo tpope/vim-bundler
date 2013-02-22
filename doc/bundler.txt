@@ -43,6 +43,19 @@ COMMANDS                                        *bundler-commands*
 :Bpedit[!] [gem]        Like |:Bopen|, but use a preview window.  Add ! to
                         suppress the |:lcd|.
 
+API                                             *bundler-api*
+
+Use bundler#project(root) to retrieve an object for the project at the given
+root path.  If no path is given, the current buffer's project root is used.
+An empty object is returned if no project is found.  Use |empty()| to check
+for that.
+
+On the bundler#project() object, versions() returns a dictionary mapping
+between gem names and their locked versions, paths() returns a dictionary
+mapping between gem names and their installation path (omitting gems which
+aren't installed), and has(gem) returns true if the given gem name is in the
+bundle (regardless of whether or not it is installed).
+
 ABOUT                                           *bundler-about*
 
 Grab the latest version or report a bug on GitHub:
