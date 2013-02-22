@@ -226,19 +226,45 @@ endfunction
 
 call s:add_methods('project',['path'])
 
-function! s:project_gems(...) dict abort
+function! s:project_locked() dict abort
   let lock_file = self.path('Gemfile.lock')
   let time = getftime(lock_file)
-  if a:0 && a:1 ==# 'refresh' || time != -1 && time != get(self,'_lock_time',-1)
+  if time != -1 && time != get(self,'_lock_time',-1)
+    let self._locked = {'git': [], 'gem': [], 'path': []}
+    let self._versions = {}
+
+    for line in readfile(lock_file)
+      if line =~# '^\S'
+        let properties = {'versions': {}}
+        if has_key(self._locked, tolower(line))
+          call extend(self._locked[tolower(line)], [properties])
+        endif
+      elseif line =~# '^  \w\+: '
+        let properties[matchstr(line, '\w\+')] = matchstr(line, ': \zs.*')
+      elseif line =~# '^    [a-zA-Z0-9_-]\+\s\+(\d\+'
+        let name = split(line, ' ')[0]
+        let ver = substitute(line, '.*(\|).*', '', 'g')
+        let properties.versions[name] = ver
+        let self._versions[name] = ver
+      endif
+    endfor
+    let self._lock_time = time
+  endif
+  return self._locked
+endfunction
+
+function! s:project_paths(...) dict abort
+  call self.locked()
+  let time = get(self, '_lock_time', -1)
+  if a:0 && a:1 ==# 'refresh' || time != -1 && time != get(self, '_path_time', -1)
+    let paths = {}
+
     " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
     if executable('env')
       let prefix = 'env PATH='.s:shellesc($PATH).' '
     else
       let prefix = ''
     endif
-
-    let self._paths = {}
-    let self._versions = {}
 
     let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir" : "chdir"
     let cwd = getcwd()
@@ -248,6 +274,7 @@ function! s:project_gems(...) dict abort
     finally
       exe chdir s:fnameescape(cwd)
     endtry
+
     if filereadable(self.path('.bundle/config'))
       let body = join(readfile(self.path('.bundle/config')), "\n")
       let bundle_path = matchstr(body, "\\CBUNDLE_PATH: \\zs[^\n]*")
@@ -256,51 +283,10 @@ function! s:project_gems(...) dict abort
       endif
     endif
 
-    let paths = self._paths
-    let versions = self._versions
-    let lines = readfile(lock_file)
-    let section = ''
-    let name = ''
-    let ver = ''
-    let repo = ''
-    let revision = ''
-    let local = ''
-    for line in lines
-      if line =~# '^\S'
-        let section = line
-        let name = ''
-        let ver = ''
-        let repo = ''
-        let revision = ''
-        let local = ''
-      elseif section ==# 'GIT' && line =~# '^  remote: '
-        let repo = matchstr(line, '.*/\zs.\{-\}\ze\%(\.git\)\=$')
-      elseif section ==# 'GIT' && line =~# '^  revision: '
-        let revision = matchstr(line, ': \zs.\{12\}')
-      elseif section ==# 'PATH' && line =~# '^  remote: '
-        let local = matchstr(line, ': \zs.*')
-        if local !~# '^/'
-          let local = simplify(self.path(local))
-        endif
-      endif
-      if line !~# '^    [a-zA-Z0-9_-]\+\s\+(\d\+'
-        continue
-      endif
-      let name = split(line, ' ')[0]
-      let ver = substitute(line, '.*(\|).*', '', 'g')
-      let versions[name] = ver
-
-      if !empty(local)
-        let files = split(glob(local . '/*/' . name . '.gemspec'), "\n")
-        if empty(files)
-          let paths[name] = local
-        else
-          let paths[name] = files[0][0 : -10-strlen(name)]
-        endif
-
-      elseif !empty(repo)
+    for config in self._locked.git
+      for [name, ver] in items(config.versions)
         for path in gem_paths
-          let dir = path . '/bundler/gems/' . repo . '-' . revision
+          let dir = path . '/bundler/gems/' . matchstr(config.remote, '.*/\zs.\{-\}\ze\%(\.git\)\=$') . '-' . config.revision[0:11]
           if isdirectory(dir)
             let files = split(glob(dir . '/*/' . name . '.gemspec'), "\n")
             if empty(files)
@@ -311,8 +297,27 @@ function! s:project_gems(...) dict abort
             break
           endif
         endfor
+      endfor
+    endfor
 
-      else
+    for config in self._locked.path
+      for [name, ver] in items(config.versions)
+        if config.remote !~# '^/'
+          let local = simplify(self.path(config.remote))
+        else
+          let local = config.remote
+        endif
+        let files = split(glob(local . '/*/' . name . '.gemspec'), "\n")
+        if empty(files)
+          let paths[name] = local
+        else
+          let paths[name] = files[0][0 : -10-strlen(name)]
+        endif
+      endfor
+    endfor
+
+    for config in self._locked.gem
+      for [name, ver] in items(config.versions)
         for path in gem_paths
           let dir = path . '/gems/' . name . '-' . ver
           if isdirectory(dir)
@@ -320,12 +325,14 @@ function! s:project_gems(...) dict abort
             break
           endif
         endfor
-      endif
+      endfor
     endfor
+
     if !exists('g:bundler_strict') || len(versions) == len(gems)
-      let self._lock_time = time
+      let self._path_time = time
+      let self._paths = paths
       call self.alter_buffer_paths()
-      return paths
+      return copy(paths)
     endif
 
     if &verbose
@@ -351,28 +358,28 @@ function! s:project_gems(...) dict abort
         let name = split(line, ' ')[0]
         let self._paths[name] = matchstr(line,' \zs.*')
       endfor
-      let self._lock_time = time
+      let self._path_time = time
       call self.alter_buffer_paths()
     endif
   endif
   return copy(get(self,'_paths',{}))
 endfunction
 
-function! s:project_paths() dict abort
-  return self.gems()
+function! s:project_gems() dict abort
+  return self.paths()
 endfunction
 
 function! s:project_versions() dict abort
-  call self.gems()
+  call self.locked()
   return copy(get(self, '_versions', {}))
 endfunction
 
 function! s:project_has(gem) dict abort
-  call self.gems()
+  call self.locked()
   return has_key(get(self, '_versions', {}), a:gem)
 endfunction
 
-call s:add_methods('project', ['gems', 'paths', 'versions', 'has'])
+call s:add_methods('project', ['locked', 'gems', 'paths', 'versions', 'has'])
 
 " }}}1
 " Buffer {{{1
@@ -477,7 +484,7 @@ augroup bundler_make
   autocmd QuickFixCmdPost *make*
         \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
         \   call s:pop_command() |
-        \   execute 'call s:project().gems(exists("g:bundler_strict") ? "" : "refresh")' |
+        \   execute 'call s:project().paths(exists("g:bundler_strict") ? "" : "refresh")' |
         \ endif
 augroup END
 
@@ -491,7 +498,7 @@ function! s:Open(cmd,gem,lcd)
     return a:cmd.' `=bundler#buffer().project().path("Gemfile.lock")`'
   else
     if !has_key(s:project().paths(), a:gem)
-      call s:project().gems('refresh')
+      call s:project().paths('refresh')
     endif
     if !has_key(s:project().paths(), a:gem)
       if has_key(s:project().versions(), a:gem)
