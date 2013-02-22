@@ -250,7 +250,7 @@ function! s:project_locked() dict abort
     endfor
     let self._lock_time = time
   endif
-  return self._locked
+  return get(self, '_locked', {})
 endfunction
 
 function! s:project_paths(...) dict abort
