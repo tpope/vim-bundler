@@ -122,10 +122,10 @@ function! s:syntaxlock()
     exe 'syn match gemfilelockFound "\<\%(\S*\)\>" contained'
   endif
   syn match gemfilelockHeading  '^PLATFORMS$' nextgroup=gemfilelockPlatform skipnl skipwhite
-  syn match gemfileLockPlatform '^  \zs[[:alnum:]._-]\+$' contained nextgroup=gemfilelockPlatform skipnl skipwhite
+  syn match gemfilelockPlatform '^  \zs[[:alnum:]._-]\+$' contained nextgroup=gemfilelockPlatform skipnl skipwhite
 
   hi def link gemfilelockHeading  PreProc
-  hi def link gemfilelockPlatform Conditional
+  hi def link gemfilelockPlatform Typedef
   hi def link gemfilelockKey      Identifier
   hi def link gemfilelockRemote   String
   hi def link gemfilelockRevision Number
