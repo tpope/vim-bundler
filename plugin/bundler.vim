@@ -259,6 +259,9 @@ function! s:project_paths(...) dict abort
   if a:0 && a:1 ==# 'refresh' || time != -1 && time != get(self, '_path_time', -1)
     let paths = {}
 
+    let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir" : "chdir"
+    let cwd = getcwd()
+
     " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
     if executable('env')
       let prefix = 'env PATH='.s:shellesc($PATH).' '
@@ -266,8 +269,6 @@ function! s:project_paths(...) dict abort
       let prefix = ''
     endif
 
-    let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir" : "chdir"
-    let cwd = getcwd()
     if filereadable(self.path('.ruby-version'))
       let ruby_version = get(readfile(self.path('.ruby-version'), '', 1), 0, '')
     else
