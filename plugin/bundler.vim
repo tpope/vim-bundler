@@ -144,8 +144,8 @@ endfunction
 
 augroup bundler_syntax
   autocmd!
-  autocmd BufNewFile,BufReadPost */.bundle/config set filetype=yaml
-  autocmd BufNewFile,BufReadPost Gemfile set filetype=ruby
+  autocmd BufNewFile,BufRead */.bundle/config set filetype=yaml
+  autocmd BufNewFile,BufRead Gemfile set filetype=ruby
   autocmd Syntax ruby if expand('<afile>:t') ==? 'gemfile' | call s:syntaxfile() | endif
   autocmd BufNewFile,BufRead [Gg]emfile.lock setf gemfilelock
   autocmd FileType gemfilelock set suffixesadd=.rb
@@ -186,8 +186,11 @@ endfunction
 
 augroup bundler
   autocmd!
-  autocmd BufNewFile,BufReadPost * call s:Detect(expand('<amatch>:p'))
-  autocmd FileType           netrw call s:Detect(expand('<afile>:p'))
+  autocmd FileType               * call s:Detect(expand('<afile>:p'))
+  autocmd BufNewFile,BufReadPost *
+        \ if empty(&filetype) |
+        \   call s:Detect(expand('<afile>:p')) |
+        \ endif
   autocmd VimEnter * if expand('<amatch>')==''|call s:Detect(getcwd())|endif
 augroup END
 
