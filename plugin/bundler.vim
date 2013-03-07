@@ -341,7 +341,7 @@ function! s:project_paths(...) dict abort
       let self._path_time = time
       let self._paths = paths
       call self.alter_buffer_paths()
-      return copy(paths)
+      return paths
     endif
 
     if &verbose
@@ -371,7 +371,7 @@ function! s:project_paths(...) dict abort
       call self.alter_buffer_paths()
     endif
   endif
-  return copy(get(self,'_paths',{}))
+  return get(self,'_paths',{})
 endfunction
 
 function! s:project_gems() dict abort
@@ -380,12 +380,12 @@ endfunction
 
 function! s:project_versions() dict abort
   call self.locked()
-  return copy(get(self, '_versions', {}))
+  return get(self, '_versions', {})
 endfunction
 
 function! s:project_has(gem) dict abort
   call self.locked()
-  return has_key(get(self, '_versions', {}), a:gem)
+  return has_key(self.versions(), a:gem)
 endfunction
 
 call s:add_methods('project', ['locked', 'gems', 'paths', 'versions', 'has'])
