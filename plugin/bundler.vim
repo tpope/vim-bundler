@@ -272,27 +272,10 @@ function! s:project_paths(...) dict abort
       let prefix = ''
     endif
 
-    if filereadable(self.path('.ruby-version'))
-      let ruby_version = get(readfile(self.path('.ruby-version'), '', 1), 0, '')
-    else
-      let ruby_version = ''
-    endif
-
     let gem_paths = []
     if exists('$GEM_PATH')
       let gem_paths = split($GEM_PATH, has('win32') ? ';' : ':')
-    elseif has_key(get(g:, 'ruby_version_paths', {}), ruby_version)
-      for path in g:ruby_version_paths[ruby_version]
-        if path =~# '/ruby/[0-9.]\+$'
-          let gem_paths = [
-                \ s:sub(path, '/ruby/\zs[0-9.]+$', 'gems/&'),
-                \ expand('~/.gem/ruby/' . s:sub(path, '.*/\ze[0-9.]+$', ''))]
-          break
-        endif
-      endfor
-    endif
-
-    if empty(gem_paths)
+    else
       try
         exe chdir s:fnameescape(self.path())
         let gem_paths = split(system(prefix.'ruby -rubygems -e "print Gem.path.join(%(;))"'), ';')
