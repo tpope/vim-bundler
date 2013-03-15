@@ -425,16 +425,6 @@ call s:add_methods('buffer',['getvar','setvar','project'])
 " }}}1
 " Bundle {{{1
 
-let s:errorformat = ''
-      \.'%+E%f:%l:\ parse\ error,'
-      \.'%W%f:%l:\ warning:\ %m,'
-      \.'%E%f:%l:in\ %*[^:]:\ %m,'
-      \.'%E%f:%l:\ %m,'
-      \.'%-C%\tfrom\ %f:%l:in\ %.%#,'
-      \.'%-Z%\tfrom\ %f:%l,'
-      \.'%-Z%p^,'
-      \.'%-G%.%#'
-
 function! s:push_chdir()
   if !exists("s:command_stack") | let s:command_stack = [] | endif
   let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir " : "chdir "
@@ -451,9 +441,9 @@ endfunction
 function! s:Bundle(bang,arg)
   let old_makeprg = &l:makeprg
   let old_errorformat = &l:errorformat
+  let old_compiler = get(b:, 'current_compiler', '')
   try
-    let &l:makeprg = 'bundle'
-    let &l:errorformat = s:errorformat
+    compiler bundler
     execute 'make! '.a:arg
     if a:bang ==# ''
       return 'if !empty(getqflist()) | cfirst | endif'
@@ -463,6 +453,10 @@ function! s:Bundle(bang,arg)
   finally
     let &l:errorformat = old_errorformat
     let &l:makeprg = old_makeprg
+    let b:current_compiler = old_compiler
+    if empty(b:current_compiler)
+      unlet b:current_compiler
+    endif
   endtry
 endfunction
 
@@ -474,8 +468,7 @@ function! s:BundleComplete(A,L,P)
 endfunction
 
 function! s:SetupMake() abort
-  setlocal makeprg=bundle
-  let &l:errorformat = s:errorformat
+  compiler bundler
 endfunction
 
 call s:command("-bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle :execute s:Bundle('<bang>',<q-args>)")
