@@ -337,39 +337,10 @@ function! s:project_paths(...) dict abort
       endfor
     endfor
 
-    if !exists('g:bundler_strict') || len(versions) == len(gems)
-      let self._path_time = time
-      let self._paths = paths
-      call self.alter_buffer_paths()
-      return paths
-    endif
-
-    if &verbose
-      let label = empty(gems) ? 'any gems' : len(failed) == 1 ? 'gem ' : 'gems '
-      unsilent echomsg "Couldn't find ".label.string(failed)[1:-2].". Falling back to Ruby."
-    endif
-
-    try
-      exe chdir s:fnameescape(self.path())
-      let output = system(prefix.'ruby -rubygems -e "require %{bundler}; Bundler.load.specs.map {|s| puts %[#{s.name} #{s.full_gem_path}]}"')
-    finally
-      exe chdir s:fnameescape(cwd)
-    endtry
-    if v:shell_error
-      for line in split(output,"\n")
-        if line !~ '^\t'
-          call s:warn(line)
-        endif
-      endfor
-    else
-      let self._paths = {}
-      for line in split(output,"\n")
-        let name = split(line, ' ')[0]
-        let self._paths[name] = matchstr(line,' \zs.*')
-      endfor
-      let self._path_time = time
-      call self.alter_buffer_paths()
-    endif
+    let self._path_time = time
+    let self._paths = paths
+    call self.alter_buffer_paths()
+    return paths
   endif
   return get(self,'_paths',{})
 endfunction
@@ -486,7 +457,7 @@ augroup bundler_make
   autocmd QuickFixCmdPost *make*
         \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
         \   call s:pop_command() |
-        \   execute 'call s:project().paths(exists("g:bundler_strict") ? "" : "refresh")' |
+        \   call s:project().paths("refresh") |
         \ endif
 augroup END
 
