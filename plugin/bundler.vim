@@ -339,10 +339,20 @@ function! s:project_paths(...) dict abort
 
     let self._path_time = time
     let self._paths = paths
+    let self._sorted = sort(values(paths))
+    let index = index(self._sorted, self.path())
+    if index > 0
+      call insert(self._sorted, remove(self._sorted,index))
+    endif
     call self.alter_buffer_paths()
     return paths
   endif
   return get(self,'_paths',{})
+endfunction
+
+function! s:project_sorted() dict abort
+  call self.paths()
+  return get(self, '_sorted', [])
 endfunction
 
 function! s:project_gems() dict abort
@@ -359,7 +369,7 @@ function! s:project_has(gem) dict abort
   return has_key(self.versions(), a:gem)
 endfunction
 
-call s:add_methods('project', ['locked', 'gems', 'paths', 'versions', 'has'])
+call s:add_methods('project', ['locked', 'gems', 'paths', 'sorted', 'versions', 'has'])
 
 " }}}1
 " Buffer {{{1
@@ -512,11 +522,7 @@ endfunction
 
 function! s:buffer_alter_paths() dict abort
   if self.getvar('&suffixesadd') =~# '\.rb\>'
-    let new = sort(values(self.project().paths()))
-    let index = index(new, self.project().path())
-    if index > 0
-      call insert(new,remove(new,index))
-    endif
+    let new = self.project().sorted()
     let old = type(self.getvar('bundler_paths')) == type([]) ? self.getvar('bundler_paths') : []
     for [option, suffix] in [['path', 'lib'], ['tags', 'tags']]
       let value = self.getvar('&'.option)
