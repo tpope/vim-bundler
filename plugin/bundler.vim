@@ -284,13 +284,16 @@ function! s:project_paths(...) dict abort
       endtry
     endif
 
-    if filereadable(self.path('.bundle/config'))
-      let body = join(readfile(self.path('.bundle/config')), "\n")
-      let bundle_path = matchstr(body, "\\CBUNDLE_PATH: \\zs[^\n]*")
-      if !empty(bundle_path)
-        let gem_paths = [self.path(bundle_path, 'ruby', matchstr(get(gem_paths, 0, '1.9.1'), '[0-9.]\+$'))]
+    let abi_version = matchstr(get(gem_paths, 0, '1.9.1'), '[0-9.]\+$')
+    for config in [expand('~/.bundle/config'), self.path('.bundle/config')]
+      if filereadable(config)
+        let body = join(readfile(config), "\n")
+        let bundle_path = matchstr(body, "\\C\\<BUNDLE_PATH: \\zs[^\n]*")
+        if !empty(bundle_path)
+          let gem_paths = [self.path(bundle_path, 'ruby', abi_version)]
+        endif
       endif
-    endif
+    endfor
 
     for source in self._locked.git
       for [name, ver] in items(source.versions)
@@ -378,6 +381,7 @@ let s:buffer_prototype = {}
 
 function! s:buffer(...) abort
   let buffer = {'#': bufnr(a:0 ? a:1 : '%')}
+  let g:buffer = buffer
   call extend(extend(buffer,s:buffer_prototype,'keep'),s:abstract_prototype,'keep')
   if buffer.getvar('bundler_root') !=# ''
     return buffer
