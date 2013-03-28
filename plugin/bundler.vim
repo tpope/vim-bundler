@@ -290,7 +290,11 @@ function! s:project_paths(...) dict abort
         let body = join(readfile(config), "\n")
         let bundle_path = matchstr(body, "\\C\\<BUNDLE_PATH: \\zs[^\n]*")
         if !empty(bundle_path)
-          let gem_paths = [self.path(bundle_path, 'ruby', abi_version)]
+          if body =~# '\C\<BUNDLE_DISABLE_SHARED_GEMS:'
+            let gem_paths = [self.path(bundle_path, 'ruby', abi_version)]
+          else
+            let gem_paths = [self.path(bundle_path)]
+          endif
         endif
       endif
     endfor
