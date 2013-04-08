@@ -468,7 +468,7 @@ augroup bundler_make
         \ if expand('<afile>:t') ==? 'gemfile' |
         \   call s:SetupMake() |
         \ endif
-  autocmd QuickFixCmdPre *make*
+  autocmd QuickFixCmdPre make,lmake
         \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
         \   call s:push_chdir() |
         \ endif
