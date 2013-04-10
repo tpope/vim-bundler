@@ -341,6 +341,15 @@ function! s:project_paths(...) dict abort
             break
           endif
         endfor
+        if !has_key(paths, name)
+          for path in gem_paths
+            let dir = glob(path . '/gems/' . name . '-' . ver . '-*')
+            if isdirectory(dir)
+              let paths[name] = dir
+              break
+            endif
+          endfor
+        endif
       endfor
     endfor
 
