@@ -442,12 +442,15 @@ function! s:Bundle(bang,arg)
   let old_compiler = get(b:, 'current_compiler', '')
   try
     compiler bundler
-    execute 'make! '.a:arg
-    if a:bang ==# ''
-      return 'if !empty(getqflist()) | cfirst | endif'
+    if exists(':Make')
+      exe 'Make '.a:args
     else
-      return ''
+      exe 'make! '.a:args
+      if a:bang ==# ''
+        return 'if !empty(getqflist()) | cfirst | endif'
+      endif
     endif
+    return ''
   finally
     let &l:errorformat = old_errorformat
     let &l:makeprg = old_makeprg
