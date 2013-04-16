@@ -481,7 +481,7 @@ augroup bundler_make
         \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
         \   call s:push_chdir() |
         \ endif
-  autocmd QuickFixCmdPost *make*
+  autocmd QuickFixCmdPost make,lmake
         \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
         \   call s:pop_command() |
         \   call s:project().paths("refresh") |
