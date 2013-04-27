@@ -279,6 +279,7 @@ function! s:project_paths(...) dict abort
       try
         exe chdir s:fnameescape(self.path())
         let gem_paths = split(system(prefix.'ruby -rubygems -e "print Gem.path.join(%(;))"'), ';')
+        exe chdir s:fnameescape(cwd)
       finally
         exe chdir s:fnameescape(cwd)
       endtry
