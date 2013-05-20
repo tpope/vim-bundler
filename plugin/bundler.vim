@@ -472,21 +472,27 @@ endfunction
 
 call s:command("-bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle :execute s:Bundle('<bang>',<q-args>)")
 
+function! s:QuickFixCmdPreMake()
+  if &makeprg =~# '^bundle' && exists('b:bundler_root')
+    call s:push_chdir()
+  endif
+endfunction
+
+function! s:QuickFixCmdPostMake()
+  if &makeprg =~# '^bundle' && exists('b:bundler_root')
+    call s:pop_command()
+    call s:project().paths('refresh')
+  endif
+endfunction
+
 augroup bundler_make
   autocmd FileType gemfilelock call s:SetupMake()
   autocmd FileType ruby
         \ if expand('<afile>:t') ==? 'gemfile' |
         \   call s:SetupMake() |
         \ endif
-  autocmd QuickFixCmdPre make,lmake
-        \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
-        \   call s:push_chdir() |
-        \ endif
-  autocmd QuickFixCmdPost make,lmake
-        \ if &makeprg =~# '^bundle' && exists('b:bundler_root') |
-        \   call s:pop_command() |
-        \   call s:project().paths("refresh") |
-        \ endif
+  autocmd QuickFixCmdPre make,lmake call s:QuickFixCmdPreMake()
+  autocmd QuickFixCmdPost make,lmake call s:QuickFixCmdPostMake()
 augroup END
 
 " }}}1
