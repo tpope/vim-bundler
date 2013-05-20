@@ -472,17 +472,23 @@ endfunction
 
 call s:command("-bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle :execute s:Bundle('<bang>',<q-args>)")
 
+function! s:IsBundlerProject()
+  return &makeprg =~# '^bundle' && exists('b:bundler_root')
+endfunction
+
 function! s:QuickFixCmdPreMake()
-  if &makeprg =~# '^bundle' && exists('b:bundler_root')
-    call s:push_chdir()
+  if !s:IsBundlerProject()
+    return
   endif
+  call s:push_chdir()
 endfunction
 
 function! s:QuickFixCmdPostMake()
-  if &makeprg =~# '^bundle' && exists('b:bundler_root')
-    call s:pop_command()
-    call s:project().paths('refresh')
+  if !s:IsBundlerProject()
+    return
   endif
+  call s:pop_command()
+  call s:project().paths('refresh')
 endfunction
 
 augroup bundler_make
