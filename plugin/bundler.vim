@@ -319,7 +319,9 @@ function! s:project_paths(...) dict abort
 
     for source in self._locked.path
       for [name, ver] in items(source.versions)
-        if source.remote !~# '^/'
+        if source.remote =~# '^\~/'
+          let local = expand(source.remote)
+        elseif source.remote !~# '^/'
           let local = simplify(self.path(source.remote))
         else
           let local = source.remote
