@@ -275,17 +275,21 @@ function! s:project_paths(...) dict abort
     let gem_paths = []
     if exists('$GEM_PATH')
       let gem_paths = split($GEM_PATH, has('win32') ? ';' : ':')
-    else
-      try
-        exe chdir s:fnameescape(self.path())
-        let gem_paths = split(system(prefix.'ruby -rubygems -e "print Gem.path.join(%(;))"'), ';')
-        exe chdir s:fnameescape(cwd)
-      finally
-        exe chdir s:fnameescape(cwd)
-      endtry
     endif
 
-    let abi_version = matchstr(get(gem_paths, 0, '1.9.1'), '[0-9.]\+$')
+    try
+      exe chdir s:fnameescape(self.path())
+
+      if len(gem_paths) == 0
+        let gem_paths = split(system(prefix.'ruby -rubygems -e "print Gem.path.join(%(;))"'), ';')
+      endif
+
+      let abi_version = system('ruby -rrbconfig -e "print RbConfig::CONFIG[\"ruby_version\"]"')
+      exe chdir s:fnameescape(cwd)
+    finally
+      exe chdir s:fnameescape(cwd)
+    endtry
+
     for config in [expand('~/.bundle/config'), self.path('.bundle/config')]
       if filereadable(config)
         let body = join(readfile(config), "\n")
