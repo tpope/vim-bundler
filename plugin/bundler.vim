@@ -172,26 +172,42 @@ function! s:FindBundlerRoot(path) abort
   return ''
 endfunction
 
-function! s:Detect(path)
+function! s:Detect(path) abort
   if !exists('b:bundler_root')
     let dir = s:FindBundlerRoot(a:path)
     if dir != ''
       let b:bundler_root = dir
     endif
   endif
-  if exists('b:bundler_root')
+  return exists('b:bundler_root')
+endfunction
+
+function! s:Setup(path) abort
+  if s:Detect(a:path)
     silent doautocmd User Bundler
+  endif
+endfunction
+
+function! s:ProjectileDetect() abort
+  if s:Detect(g:projectile_file)
+    call projectile#append(b:bundler_root, {
+          \ 'Gemfile': {'dispatch': ['bundle', '--gemfile={file}'], 'alternate': 'Gemfile.lock'},
+          \ 'Gemfile.lock': {'alternate': 'Gemfile'}})
   endif
 endfunction
 
 augroup bundler
   autocmd!
-  autocmd FileType               * call s:Detect(expand('<afile>:p'))
+  autocmd FileType               * call s:Setup(expand('<afile>:p'))
   autocmd BufNewFile,BufReadPost *
         \ if empty(&filetype) |
-        \   call s:Detect(expand('<afile>:p')) |
+        \   call s:Setup(expand('<afile>:p')) |
         \ endif
-  autocmd VimEnter * if expand('<amatch>')==''|call s:Detect(getcwd())|endif
+  autocmd User ProjectileDetect call s:ProjectileDetect()
+  autocmd User ProjectileActivate
+        \ if exists('b:bundler_root') && !exists(':Bopen') |
+        \   silent doautocmd User Bundler |
+        \ endif
 augroup END
 
 " }}}1

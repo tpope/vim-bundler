@@ -43,6 +43,11 @@ COMMANDS                                        *bundler-commands*
 :Bpedit[!] [gem]        Like |:Bopen|, but use a preview window.  Add ! to
                         suppress the |:lcd|.
 
+PROJECTILE SUPPORT                              *bundler-projectile*
+
+If the Vim plugin |projectile| is installed, bundler.vim will provide
+alternates and a default dispatch for the Gemfile and lock file.
+
 API                                             *bundler-api*
 
 Use bundler#project(root) to retrieve an object for the project at the given
