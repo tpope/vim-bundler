@@ -193,6 +193,9 @@ function! s:ProjectileDetect() abort
     call projectile#append(b:bundler_root, {
           \ 'Gemfile': {'dispatch': ['bundle', '--gemfile={file}'], 'alternate': 'Gemfile.lock'},
           \ 'Gemfile.lock': {'alternate': 'Gemfile'}})
+    for projections in bundler#project().projections_list()
+      call projectile#append(b:bundler_root, projections)
+    endfor
   endif
 endfunction
 
@@ -376,6 +379,9 @@ function! s:project_paths(...) dict abort
       endfor
     endfor
 
+    if has_key(self, '_projections_list')
+      call remove(self, '_projections_list')
+    endif
     let self._path_time = time
     let self._paths = paths
     let self._sorted = sort(values(paths))
@@ -408,7 +414,28 @@ function! s:project_has(gem) dict abort
   return has_key(self.versions(), a:gem)
 endfunction
 
-call s:add_methods('project', ['locked', 'gems', 'paths', 'sorted', 'versions', 'has'])
+function! s:project_projections_list() dict abort
+  call self.paths()
+  if !has_key(self, '_projections_list')
+    let self._projections_list = []
+    let list = self._projections_list
+    if !empty(get(g:, 'gem_projections', {}))
+      for name in keys(self.versions())
+        if has_key(g:gem_projections, name)
+          call add(list, g:gem_projections[name])
+        endif
+      endfor
+    endif
+    for path in self.sorted()
+      if filereadable(path . '/lib/projections.json')
+        call add(list, projectile#json_parse(readfile(path . '/lib/projections.json')))
+      endif
+    endfor
+  endif
+  return self._projections_list
+endfunction
+
+call s:add_methods('project', ['locked', 'gems', 'paths', 'sorted', 'versions', 'has', 'projections_list'])
 
 " }}}1
 " Buffer {{{1

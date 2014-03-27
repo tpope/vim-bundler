@@ -46,7 +46,10 @@ COMMANDS                                        *bundler-commands*
 PROJECTILE SUPPORT                              *bundler-projectile*
 
 If the Vim plugin |projectile| is installed, bundler.vim will provide
-alternates and a default dispatch for the Gemfile and lock file.
+alternates and a default dispatch for the Gemfile and lock file.  In addition,
+projections will be loaded for each bundled gem from two locations:
+*g:gem_projections* keyed by gem name, and *lib/projections.json* from the
+root of each gem.
 
 API                                             *bundler-api*
 
