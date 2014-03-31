@@ -7,6 +7,11 @@ if exists('g:loaded_bundler') || &cp || v:version < 700
 endif
 let g:loaded_bundler = 1
 
+if !exists('g:dispatch_compilers')
+  let g:dispatch_compilers = {}
+endif
+call extend(g:dispatch_compilers, {'bundle exec': ''})
+
 " Utility {{{1
 
 function! s:function(name) abort
