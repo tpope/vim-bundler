@@ -10,7 +10,7 @@ let g:loaded_bundler = 1
 if !exists('g:dispatch_compilers')
   let g:dispatch_compilers = {}
 endif
-call extend(g:dispatch_compilers, {'bundle exec': ''})
+let g:dispatch_compilers['bundle exec'] = ''
 
 " Utility {{{1
 
