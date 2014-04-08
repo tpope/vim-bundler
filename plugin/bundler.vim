@@ -328,6 +328,7 @@ function! s:project_paths(...) dict abort
       endif
     endfor
 
+    let git_sudo_install_path = expand('~/.bundler/ruby/').abi_version
     for source in self._locked.git
       for [name, ver] in items(source.versions)
         for path in gem_paths
@@ -342,6 +343,15 @@ function! s:project_paths(...) dict abort
             break
           endif
         endfor
+        let dir = git_sudo_install_path . '/' . matchstr(source.remote, '.*/\zs.\{-\}\ze\%(\.git\)\=$') . '-' . source.revision[0:11]
+        if isdirectory(dir)
+          let files = split(glob(dir . '/*/' . name . '.gemspec'), "\n")
+          if empty(files)
+            let paths[name] = dir
+          else
+            let paths[name] = files[0][0 : -10-strlen(name)]
+          endif
+        endif
       endfor
     endfor
 
