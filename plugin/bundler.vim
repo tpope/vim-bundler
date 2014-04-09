@@ -459,7 +459,6 @@ let s:buffer_prototype = {}
 
 function! s:buffer(...) abort
   let buffer = {'#': bufnr(a:0 ? a:1 : '%')}
-  let g:buffer = buffer
   call extend(extend(buffer,s:buffer_prototype,'keep'),s:abstract_prototype,'keep')
   if buffer.getvar('bundler_root') !=# ''
     return buffer
