@@ -14,7 +14,7 @@ This is a lightweight bag of Vim goodies for
 * Highlight Bundler keywords in `Gemfile`.
 * Support for `gf` in `Gemfile.lock`, plus syntax highlighting that
   distinguishes between installed and missing gems.
-* Support for [projectile.vim](https://github.com/tpope/vim-projectile),
+* Support for [projectionist.vim](https://github.com/tpope/vim-projectionist),
   including projections based on which gems are bundled.
 
 ## Installation

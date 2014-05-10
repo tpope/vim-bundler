@@ -193,13 +193,13 @@ function! s:Setup(path) abort
   endif
 endfunction
 
-function! s:ProjectileDetect() abort
-  if s:Detect(g:projectile_file)
-    call projectile#append(b:bundler_root, {
+function! s:ProjectionistDetect() abort
+  if s:Detect(get(g:, 'projectionist_file', ''))
+    call projectionist#append(b:bundler_root, {
           \ 'Gemfile': {'dispatch': ['bundle', '--gemfile={file}'], 'alternate': 'Gemfile.lock'},
           \ 'Gemfile.lock': {'alternate': 'Gemfile'}})
     for projections in bundler#project().projections_list()
-      call projectile#append(b:bundler_root, projections)
+      call projectionist#append(b:bundler_root, projections)
     endfor
   endif
 endfunction
@@ -211,8 +211,8 @@ augroup bundler
         \ if empty(&filetype) |
         \   call s:Setup(expand('<afile>:p')) |
         \ endif
-  autocmd User ProjectileDetect call s:ProjectileDetect()
-  autocmd User ProjectileActivate
+  autocmd User ProjectionistDetect call s:ProjectionistDetect()
+  autocmd User ProjectionistActivate
         \ if exists('b:bundler_root') && !exists(':Bopen') |
         \   silent doautocmd User Bundler |
         \ endif
@@ -443,7 +443,7 @@ function! s:project_projections_list() dict abort
     endif
     for path in self.sorted()
       if filereadable(path . '/lib/projections.json')
-        call add(list, projectile#json_parse(readfile(path . '/lib/projections.json')))
+        call add(list, projectionist#json_parse(readfile(path . '/lib/projections.json')))
       endif
     endfor
   endif
