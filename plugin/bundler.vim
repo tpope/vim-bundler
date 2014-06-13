@@ -522,11 +522,16 @@ function! s:Bundle(bang,arg)
   endtry
 endfunction
 
-function! s:BundleComplete(A,L,P)
-  if a:L =~# '^\S\+\s\+\%(show\|update\) '
-    return s:completion_filter(keys(s:project().paths()),a:A)
+function! s:BundleComplete(A, L, P) abort
+  return bundler#complete(a:A, a:L, a:P, bundler#project())
+endfunction
+
+function! bundler#complete(A, L, P, ...) abort
+  let project = a:0 ? a:1 : bundler#project(getcwd())
+  if !empty(project) && a:L =~# '\s\+\%(show\|update\) '
+    return s:completion_filter(keys(project.paths()), a:A)
   endif
-  return s:completion_filter(['install','update','exec','package','config','check','list','show','outdated','console','viz','benchmark'],a:A)
+  return s:completion_filter(['install','update','exec','package','config','check','list','show','outdated','console','viz','benchmark'], a:A)
 endfunction
 
 function! s:SetupMake() abort
