@@ -11,6 +11,7 @@ set cpo-=C
 CompilerSet makeprg=bundle
 
 CompilerSet errorformat=
+      \%+GCould\ not\ find\ gem\ '%.%#,
       \%+E%f:%l:\ parse\ error,
       \%W%f:%l:\ warning:\ %m,
       \%E%f:%l:in\ %*[^:]:\ %m,
