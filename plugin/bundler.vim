@@ -560,8 +560,8 @@ augroup bundler_make
         \ if expand('<afile>:t') ==? 'gemfile' |
         \   call s:SetupMake() |
         \ endif
-  autocmd QuickFixCmdPre make,lmake call s:QuickFixCmdPreMake()
-  autocmd QuickFixCmdPost make,lmake call s:QuickFixCmdPostMake()
+  autocmd QuickFixCmdPre *make* call s:QuickFixCmdPreMake()
+  autocmd QuickFixCmdPost *make* call s:QuickFixCmdPostMake()
 augroup END
 
 " }}}1
