@@ -11,7 +11,10 @@ set cpo-=C
 CompilerSet makeprg=bundle
 
 CompilerSet errorformat=
-      \%+GCould\ not\ find\ gem\ '%.%#,
+      \%+EGem::InstallError:%.%#,
+      \%+ECould\ not\ find\ gem\ '%.%#,
+      \%+EBundler\ could\ not\ find\ compatible\ versions\ for\ gem\ \"%.%#,
+      \%+Eextconf\ failed%.%#,
       \%+E%f:%l:\ parse\ error,
       \%W%f:%l:\ warning:\ %m,
       \%E%f:%l:in\ %*[^:]:\ %m,
