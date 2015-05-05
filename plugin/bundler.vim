@@ -529,9 +529,9 @@ function! s:Bundle(bang,arg)
     execute cd fnameescape(s:project().path())
     if a:arg =~# '^\s*console\>'
       if exists(':Start') > 1
-        execute 'Start'.a:bang 'bundle console' a:args
+        execute 'Start'.a:bang '-title=bundle\ console bundle console' a:arg
       else
-        execute '!bundle console' a:args
+        execute '!bundle console' a:arg
       endif
     else
       compiler bundler
@@ -600,7 +600,7 @@ augroup bundler_command
   autocmd QuickFixCmdPost *make* call s:QuickFixCmdPostMake()
   autocmd User Bundler
         \ if exists(':Console') < 2 |
-        \   exe "command! -buffer -bar -bang -nargs=* Console :Bundle<bang> <console> <args>" |
+        \   exe "command! -buffer -bar -bang -nargs=* Console :Bundle<bang> console <args>" |
         \ endif
 augroup END
 
