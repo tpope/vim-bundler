@@ -523,13 +523,24 @@ function! s:Bundle(bang,arg)
   let old_makeprg = &l:makeprg
   let old_errorformat = &l:errorformat
   let old_compiler = get(b:, 'current_compiler', '')
+  let cd = exists('*haslocaldir') && haslocaldir() ? 'lcd' : 'cd'
+  let cwd = getcwd()
   try
-    compiler bundler
-    execute 'make! '.a:arg
-    if a:bang ==# ''
-      return 'if !empty(getqflist()) | cfirst | endif'
+    execute cd fnameescape(s:project().path())
+    if a:arg =~# '^\s*console\>'
+      if exists(':Start') > 1
+        execute 'Start'.a:bang 'bundle console' a:args
+      else
+        execute '!bundle console' a:args
+      endif
     else
-      return ''
+      compiler bundler
+      execute 'make! '.a:arg
+      if a:bang ==# ''
+        return 'if !empty(getqflist()) | cfirst | endif'
+      else
+        return ''
+      endif
     endif
   finally
     let &l:errorformat = old_errorformat
@@ -538,6 +549,7 @@ function! s:Bundle(bang,arg)
     if empty(b:current_compiler)
       unlet b:current_compiler
     endif
+    execute cd fnameescape(cwd)
   endtry
 endfunction
 
@@ -578,7 +590,7 @@ function! s:QuickFixCmdPostMake()
   call s:project().paths('refresh')
 endfunction
 
-augroup bundler_make
+augroup bundler_command
   autocmd FileType gemfilelock call s:SetupMake()
   autocmd FileType ruby
         \ if expand('<afile>:t') =~# '^\%([Gg]emfile\|gems\.rb\)$' |
@@ -586,6 +598,10 @@ augroup bundler_make
         \ endif
   autocmd QuickFixCmdPre *make* call s:QuickFixCmdPreMake()
   autocmd QuickFixCmdPost *make* call s:QuickFixCmdPostMake()
+  autocmd User Bundler
+        \ if exists(':Console') < 2 |
+        \   exe "command! -buffer -bar -bang -nargs=* Console :Bundle<bang> <console> <args>" |
+        \ endif
 augroup END
 
 " Section: Bopen
