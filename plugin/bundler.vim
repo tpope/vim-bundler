@@ -528,10 +528,13 @@ function! s:Bundle(bang,arg)
   try
     execute cd fnameescape(s:project().path())
     if a:arg =~# '^\s*console\>'
+      let arg = substitute(a:arg, '^\s*console\s*', '', '')
       if exists(':Start') > 1
-        execute 'Start'.a:bang '-title=bundle\ console bundle console' a:arg
+        execute 'Start'.a:bang '-title=' .
+              \ escape(fnamemodify(s:project().path(), ':t'), ' ') .
+              \ '\ console bundle console' arg
       else
-        execute '!bundle console' a:arg
+        execute '!bundle console' arg
       endif
     else
       compiler bundler
