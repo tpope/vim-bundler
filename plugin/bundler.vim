@@ -232,7 +232,7 @@ function! bundler#project(...) abort
     let lock = !empty(get(b:, 'bundler_lock', '')) ? b:bundler_lock : s:FindBundlerLock(expand('%:p'))
   elseif filereadable(a:1)
     let lock = a:1
-  elseif filereadable(a:1 . '/Gemfile.lock')
+  elseif filereadable(a:1 . '/Gemfile')
     let lock = a:1 . '/Gemfile.lock'
   elseif filereadable(a:1 . '/gems.locked')
     let lock = a:1 . '/gems.locked'
