@@ -349,6 +349,8 @@ function! s:project_paths(...) dict abort
       endif
     endfor
 
+    call map(gem_paths, 'resolve(v:val)')
+
     let git_sudo_install_path = expand('~/.bundler/ruby/').abi_version
     for source in self._locked.git
       for [name, ver] in items(source.versions)
