@@ -184,6 +184,14 @@ function! s:Detect(path) abort
     let lock = s:FindBundlerLock(a:path)
     if !empty(lock)
       let b:bundler_lock = lock
+    elseif !empty(getbufvar('#', 'bundler_lock'))
+      let lock = getbufvar('#', 'bundler_lock')
+      for path in values(s:project(lock).paths())
+        if strpart(a:path, 0, len(path)) ==# path
+          let b:bundler_lock = lock
+          break
+        endif
+      endfor
     endif
   endif
   return exists('b:bundler_lock')
