@@ -110,7 +110,7 @@ endfunction
 
 function! s:syntaxlock()
   setlocal iskeyword+=-,.
-  syn match gemfilelockHeading  '^[[:upper:]]\+$'
+  syn match gemfilelockHeading  '^[[:upper:] ]\+$'
   syn match gemfilelockKey      '^\s\+\zs\S\+:'he=e-1 skipwhite nextgroup=gemfilelockRevision
   syn match gemfilelockKey      'remote:'he=e-1 skipwhite nextgroup=gemfilelockRemote
   syn match gemfilelockRemote   '\S\+' contained
