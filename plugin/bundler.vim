@@ -121,7 +121,7 @@ function! s:syntaxlock()
   syn match gemfilelockBang     '!' contained
   if !empty(bundler#project())
     exe 'syn match gemfilelockFound "\<\%(bundler\|' . join(keys(s:project().paths()), '\|') . '\)\>" contained'
-    exe 'syn match gemfilelockMissing "\<\%(' . join(keys(filter(s:project().versions(), '!has_key(s:project().paths(), v:key)')), '\|') . '\)\>" contained'
+    exe 'syn match gemfilelockMissing "\<\%(' . join(filter(keys(s:project().versions()), '!has_key(s:project().paths(), v:val)'), '\|') . '\)\>" contained'
   else
     exe 'syn match gemfilelockFound "\<\%(\S*\)\>" contained'
   endif
