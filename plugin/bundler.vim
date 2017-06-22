@@ -105,7 +105,7 @@ let s:abstract_prototype = {}
 
 function! s:syntaxfile()
   syntax keyword rubyGemfileMethod gemspec gem source path git group platform platforms env ruby
-  hi def link rubyGemfileMethod Function
+  hi def link rubyGemfileMethod rubyInclude
 endfunction
 
 function! s:syntaxlock()
