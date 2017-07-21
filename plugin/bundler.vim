@@ -590,10 +590,6 @@ function! bundler#complete(A, L, P, ...) abort
   return s:completion_filter(['install','update','exec','package','config','check','list','show','outdated','console','viz','benchmark'], a:A)
 endfunction
 
-function! s:SetupMake() abort
-  compiler bundler
-endfunction
-
 call s:command("-bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle :execute s:Bundle('<bang>',<q-args>)")
 
 function! s:IsBundlerProject()
@@ -616,11 +612,6 @@ function! s:QuickFixCmdPostMake()
 endfunction
 
 augroup bundler_command
-  autocmd FileType gemfilelock call s:SetupMake()
-  autocmd FileType ruby
-        \ if expand('<afile>:t') =~# '^\%([Gg]emfile\|gems\.rb\)$' |
-        \   call s:SetupMake() |
-        \ endif
   autocmd QuickFixCmdPre *make* call s:QuickFixCmdPreMake()
   autocmd QuickFixCmdPost *make* call s:QuickFixCmdPostMake()
   autocmd User Bundler
