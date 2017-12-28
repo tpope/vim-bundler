@@ -353,7 +353,7 @@ function! s:project_paths(...) dict abort
       exe chdir s:fnameescape(self.path())
 
       if len(gem_paths) == 0
-        let gem_paths = split(system(prefix.'ruby -rubygems -e '.s:shellesc('print Gem.path.join(%(;))')), ';')
+        let gem_paths = split(system(prefix.'ruby -rrubygems -e '.s:shellesc('print Gem.path.join(%(;))')), ';')
       endif
 
       let abi_version = system('ruby -rrbconfig -e '.s:shellesc('print RbConfig::CONFIG["ruby_version"]'))
