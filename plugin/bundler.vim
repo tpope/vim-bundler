@@ -27,7 +27,7 @@ function! s:gsub(str,pat,rep) abort
 endfunction
 
 function! s:shellesc(arg) abort
-  if a:arg =~ '^[A-Za-z0-9_/.-]\+$'
+  if a:arg =~# '^[A-Za-z0-9_/.-]\+$'
     return a:arg
   else
     return shellescape(a:arg)
