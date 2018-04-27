@@ -303,12 +303,14 @@ function! s:project_locked() dict abort
     let self._locked = {'git': [], 'gem': [], 'path': []}
     let self._versions = {}
     let self._dependencies = {}
+    let section = ''
 
     for line in readfile(lock_file)
       if line =~# '^\S'
+        let section = tr(tolower(line), ' ', '_')
         let properties = {'versions': {}}
-        if has_key(self._locked, tolower(line))
-          call extend(self._locked[tolower(line)], [properties])
+        if type(get(self._locked, section)) ==# type([])
+          call extend(self._locked[section], [properties])
         endif
       elseif line =~# '^  \w\+: '
         let properties[matchstr(line, '\w\+')] = matchstr(line, ': \zs.*')
@@ -321,6 +323,8 @@ function! s:project_locked() dict abort
       elseif line =~# '^      [a-zA-Z0-9._-]\+\s\+('
         let dep = split(line, ' ')[0]
         call add(self._dependencies[name], dep)
+      elseif line =~# '^   \S' && !has_key(self._locked, section)
+        let self._locked[section] = line[3:-1]
       endif
     endfor
     let self._lock_time = time
