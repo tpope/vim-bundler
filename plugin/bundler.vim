@@ -219,9 +219,12 @@ endfunction
 
 function! s:ProjectionistDetect() abort
   if s:Detect(get(g:, 'projectionist_file', ''))
-    call projectionist#append(fnamemodify(b:bundler_lock, ':h'), {
-          \ 'Gemfile': {'dispatch': ['bundle', '--gemfile={file}'], 'alternate': 'Gemfile.lock'},
-          \ 'gems.rb': {'dispatch': ['bundle', '--gemfile={file}'], 'alternate': 'gems.locked'},
+    let dir = fnamemodify(b:bundler_lock, ':h')
+    call projectionist#append(dir, {
+          \ '*': filereadable(dir . '/config/environment.rb') ? {} :
+          \ {'console': 'bundle console'},
+          \ 'Gemfile': {'dispatch': 'bundle --gemfile={file}', 'alternate': 'Gemfile.lock'},
+          \ 'gems.rb': {'dispatch': 'bundle --gemfile={file}', 'alternate': 'gems.locked'},
           \ 'gems.locked': {'alternate': 'gems.rb'},
           \ 'Gemfile.lock': {'alternate': 'Gemfile'}})
     for projections in bundler#project().projections_list()
