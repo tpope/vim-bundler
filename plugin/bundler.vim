@@ -42,7 +42,7 @@ function! s:fnameescape(file) abort
   endif
 endfunction
 
-function! s:shellslash(path)
+function! s:shellslash(path) abort
   if exists('+shellslash') && !&shellslash
     return s:gsub(a:path,'\\','/')
   else
@@ -50,7 +50,7 @@ function! s:shellslash(path)
   endif
 endfunction
 
-function! s:completion_filter(results,A)
+function! s:completion_filter(results,A) abort
   let results = sort(copy(a:results))
   call filter(results,'v:val !~# "\\~$"')
   let filtered = filter(copy(results),'v:val[0:strlen(a:A)-1] ==# a:A')
@@ -70,7 +70,7 @@ function! s:throw(string) abort
   throw v:errmsg
 endfunction
 
-function! s:warn(str)
+function! s:warn(str) abort
   echohl WarningMsg
   echomsg a:str
   echohl None
@@ -88,7 +88,7 @@ function! s:command(definition) abort
   let s:commands += [a:definition]
 endfunction
 
-function! s:define_commands()
+function! s:define_commands() abort
   for command in s:commands
     exe 'command! -buffer '.command
   endfor
@@ -103,12 +103,12 @@ let s:abstract_prototype = {}
 
 " Section: Syntax highlighting
 
-function! s:syntaxfile()
+function! s:syntaxfile() abort
   syntax keyword rubyGemfileMethod gemspec gem source path git group platform platforms env ruby
   hi def link rubyGemfileMethod rubyInclude
 endfunction
 
-function! s:syntaxlock()
+function! s:syntaxlock() abort
   setlocal iskeyword+=-,.
   syn match gemfilelockHeading  '^[[:upper:] ]\+$'
   syn match gemfilelockKey      '^\s\+\zs\S\+:'he=e-1 skipwhite nextgroup=gemfilelockRevision
@@ -139,7 +139,7 @@ function! s:syntaxlock()
   hi def link gemfilelockBang     Special
 endfunction
 
-function! s:setuplock()
+function! s:setuplock() abort
   setlocal includeexpr=get(bundler#project().gems(),v:fname,v:fname)
   setlocal suffixesadd=/
   cnoremap <buffer><expr> <Plug><cfile> get(bundler#project().gems(),expand("<cfile>"),"\022\006")
@@ -551,20 +551,20 @@ call s:add_methods('buffer',['getvar','setvar','project'])
 
 " Section: Bundle
 
-function! s:push_chdir()
+function! s:push_chdir() abort
   if !exists("s:command_stack") | let s:command_stack = [] | endif
   let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir " : "chdir "
   call add(s:command_stack,chdir.s:fnameescape(getcwd()))
   exe chdir.'`=s:project().path()`'
 endfunction
 
-function! s:pop_command()
+function! s:pop_command() abort
   if exists("s:command_stack") && len(s:command_stack) > 0
     exe remove(s:command_stack,-1)
   endif
 endfunction
 
-function! s:Bundle(bang,arg)
+function! s:Bundle(bang,arg) abort
   let old_makeprg = &l:makeprg
   let old_errorformat = &l:errorformat
   let old_compiler = get(b:, 'current_compiler', '')
@@ -615,19 +615,19 @@ endfunction
 
 call s:command("-bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle :execute s:Bundle('<bang>',<q-args>)")
 
-function! s:IsBundlerProject()
+function! s:IsBundlerMake() abort
   return &makeprg =~# '^bundle' && exists('b:bundler_lock')
 endfunction
 
-function! s:QuickFixCmdPreMake()
-  if !s:IsBundlerProject()
+function! s:QuickFixCmdPreMake() abort
+  if !s:IsBundlerMake()
     return
   endif
   call s:push_chdir()
 endfunction
 
-function! s:QuickFixCmdPostMake()
-  if !s:IsBundlerProject()
+function! s:QuickFixCmdPostMake() abort
+  if !s:IsBundlerMake()
     return
   endif
   call s:pop_command()
@@ -645,7 +645,7 @@ augroup END
 
 " Section: Bopen
 
-function! s:Open(cmd,gem,lcd)
+function! s:Open(cmd,gem,lcd) abort
   if a:gem ==# '' && a:lcd
     return a:cmd.' '.fnameescape(s:project().manifest())
   elseif a:gem ==# ''
@@ -673,7 +673,7 @@ function! s:Open(cmd,gem,lcd)
   endif
 endfunction
 
-function! s:OpenComplete(A,L,P)
+function! s:OpenComplete(A,L,P) abort
   return s:completion_filter(keys(s:project().paths()),a:A)
 endfunction
 
