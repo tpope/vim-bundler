@@ -218,7 +218,7 @@ function! s:Setup(path) abort
 endfunction
 
 function! s:ProjectionistDetect() abort
-  if s:Detect(get(g:, 'projectionist_file', ''))
+  if s:Detect(get(g:, 'projectionist_file', '')) && !exists('b:bundler_gem')
     let dir = fnamemodify(b:bundler_lock, ':h')
     call projectionist#append(dir, {
           \ '*': filereadable(dir . '/config/environment.rb') ? {} :
