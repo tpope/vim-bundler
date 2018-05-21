@@ -706,7 +706,7 @@ function! s:buffer_alter_paths() dict abort
       let new = sort(values(self.project().dependencies(gem)))
     endif
     let old = type(self.getvar('bundler_paths')) == type([]) ? self.getvar('bundler_paths') : []
-    for [option, suffix] in [['path', 'lib'], ['tags', 'tags']]
+    for [option, suffix] in [['tags', 'tags'], ['path', 'lib']]
       let value = self.getvar('&'.option)
       if !empty(old)
         let drop = s:build_path_option(old,suffix)
