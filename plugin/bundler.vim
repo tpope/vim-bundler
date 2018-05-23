@@ -179,7 +179,7 @@ function! s:FindBundlerLock(path) abort
   let fn = fnamemodify(path,':s?[\/]$??')
   let ofn = ""
   let nfn = fn
-  while fn != ofn
+  while fn !=# ofn && fn !=# '.'
     if filereadable(fn.'/Gemfile.lock') && filereadable(fn.'/Gemfile')
       return s:sub(simplify(fnamemodify(fn,':p')),'[\\/]$','/Gemfile.lock')
     elseif filereadable(fn.'/gems.locked') && filereadable(fn.'/gems.rb')
