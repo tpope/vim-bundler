@@ -388,11 +388,13 @@ function! s:project_paths(...) dict abort
 
     call map(gem_paths, 'resolve(v:val)')
 
-    let git_sudo_install_path = expand('~/.bundler/ruby/').abi_version
     for source in self._locked.git
+      let basename = matchstr(source.remote, '.*/\zs.\{-\}\ze\%(\.git\)\=$') .
+            \ '-' . source.revision[0:11]
       for [name, ver] in items(source.versions)
-        for path in gem_paths
-          let dir = path . '/bundler/gems/' . matchstr(source.remote, '.*/\zs.\{-\}\ze\%(\.git\)\=$') . '-' . source.revision[0:11]
+        for path in map(copy(gem_paths), 'v:val . "/bundler/gems"') +
+              \ [expand('~/.bundle/ruby/') . abi_version]
+          let dir = path . '/' . basename
           if isdirectory(dir)
             let files = split(glob(dir . '/*/' . name . '.gemspec'), "\n")
             if empty(files)
@@ -403,15 +405,6 @@ function! s:project_paths(...) dict abort
             break
           endif
         endfor
-        let dir = git_sudo_install_path . '/' . matchstr(source.remote, '.*/\zs.\{-\}\ze\%(\.git\)\=$') . '-' . source.revision[0:11]
-        if isdirectory(dir)
-          let files = split(glob(dir . '/*/' . name . '.gemspec'), "\n")
-          if empty(files)
-            let paths[name] = dir
-          else
-            let paths[name] = files[0][0 : -10-strlen(name)]
-          endif
-        endif
       endfor
     endfor
 
