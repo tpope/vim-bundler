@@ -457,6 +457,10 @@ function! s:project_paths(...) dict abort
     if index > 0
       call insert(self._sorted, remove(self._sorted,index))
     endif
+    if len(self._sorted) > 1 && filereadable(self._sorted[1] . '/lib/tags') &&
+          \ !filereadable(self._sorted[1] . '/tags')
+      let self._tags = 'lib/tags'
+    endif
     call self.alter_buffer_paths()
     return paths
   endif
@@ -466,6 +470,11 @@ endfunction
 function! s:project_sorted() dict abort
   call self.paths()
   return get(self, '_sorted', [])
+endfunction
+
+function! s:project_tags() dict abort
+  call self.paths()
+  return get(self, '_tags', [])
 endfunction
 
 function! s:project_gems() dict abort
@@ -698,7 +707,8 @@ function! s:buffer_alter_paths() dict abort
       let new = sort(values(self.project().dependencies(gem)))
     endif
     let old = type(self.getvar('bundler_paths')) == type([]) ? self.getvar('bundler_paths') : []
-    for [option, suffix] in [['tags', 'tags'], ['path', 'lib']]
+    for [option, suffix] in
+          \ [['tags', get(self.project(), '_tags', 'tags')], ['path', 'lib']]
       let value = self.getvar('&'.option)
       if !empty(old)
         let drop = s:build_path_option(old,suffix)
