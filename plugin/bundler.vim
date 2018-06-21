@@ -670,7 +670,7 @@ function! s:Open(cmd,gem,lcd) abort
       endif
       return 'echoerr v:errmsg'
     endif
-    let path = fnameescape(bundler#buffer().project().paths()[a:gem])
+    let path = fnameescape(s:project().paths()[a:gem])
     let exec = a:cmd.' '.path
     if a:cmd =~# '^pedit' && a:lcd
       let exec .= '|wincmd P|lcd '.path.'|wincmd p'
