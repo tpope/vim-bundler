@@ -50,6 +50,10 @@ function! s:shellslash(path) abort
   endif
 endfunction
 
+function! s:filereadable(path) abort
+  return filereadable(a:path)
+endfunction
+
 function! s:completion_filter(results,A) abort
   let results = sort(copy(a:results))
   call filter(results,'v:val !~# "\\~$"')
@@ -180,10 +184,10 @@ function! s:FindBundlerLock(path) abort
   let ofn = ""
   let nfn = fn
   while fn !=# ofn && fn !=# '.'
-    if filereadable(fn.'/Gemfile.lock') && filereadable(fn.'/Gemfile')
-      return s:sub(simplify(fnamemodify(fn,':p')),'[\\/]$','/Gemfile.lock')
-    elseif filereadable(fn.'/gems.locked') && filereadable(fn.'/gems.rb')
-      return s:sub(simplify(fnamemodify(fn,':p')),'[\\/]$','/gems.locked')
+    if s:filereadable(fn . '/Gemfile.lock') && s:filereadable(fn . '/Gemfile')
+      return s:sub(fnamemodify(fn,':p'), '[\\/]=$', '/Gemfile.lock')
+    elseif s:filereadable(fn . '/gems.locked') && s:filereadable(fn . '/gems.rb')
+      return s:sub(fnamemodify(fn,':p'), '[\\/]=$', '/gems.locked')
     endif
     let ofn = fn
     let fn = fnamemodify(ofn,':h')
@@ -221,7 +225,7 @@ function! s:ProjectionistDetect() abort
   if s:Detect(get(g:, 'projectionist_file', '')) && !exists('b:bundler_gem')
     let dir = fnamemodify(b:bundler_lock, ':h')
     call projectionist#append(dir, {
-          \ '*': filereadable(dir . '/config/environment.rb') ? {} :
+          \ '*': s:filereadable(dir . '/config/environment.rb') ? {} :
           \ {'console': 'bundle console'},
           \ 'Gemfile': {'dispatch': 'bundle --gemfile={file}', 'alternate': 'Gemfile.lock'},
           \ 'gems.rb': {'dispatch': 'bundle --gemfile={file}', 'alternate': 'gems.locked'},
@@ -255,12 +259,12 @@ let s:projects = {}
 function! bundler#project(...) abort
   if !a:0
     let lock = !empty(get(b:, 'bundler_lock', '')) ? b:bundler_lock : s:FindBundlerLock(expand('%:p'))
-  elseif filereadable(a:1)
-    let lock = a:1
-  elseif filereadable(a:1 . '/Gemfile')
+  elseif s:filereadable(a:1 . '/Gemfile.lock')
     let lock = a:1 . '/Gemfile.lock'
-  elseif filereadable(a:1 . '/gems.locked')
+  elseif s:filereadable(a:1 . '/gems.locked')
     let lock = a:1 . '/gems.locked'
+  elseif s:filereadable(a:1)
+    let lock = a:1
   else
     let lock = ''
   endif
@@ -453,7 +457,7 @@ function! s:project_paths(...) dict abort
     let self._path_time = time
     let self._paths = paths
     let self._sorted = sort(values(paths))
-    let index = index(self._sorted, self.path())
+    let index = index(self._sorted, fnamemodify(self.lock(), ':h'))
     if index > 0
       call insert(self._sorted, remove(self._sorted,index))
     endif
@@ -552,7 +556,7 @@ function! s:buffer_setvar(var,value) dict abort
 endfunction
 
 function! s:buffer_project() dict abort
-  return s:project(fnamemodify(self.getvar('bundler_lock'), ':h'))
+  return s:project(self.getvar('bundler_lock'))
 endfunction
 
 call s:add_methods('buffer',['getvar','setvar','project'])
