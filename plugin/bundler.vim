@@ -289,7 +289,7 @@ function! s:project(...) abort
   endif
 endfunction
 
-function! s:project_path(...) dict abort
+function! s:project_real(...) dict abort
   return join([self.root]+a:000,'/')
 endfunction
 
@@ -301,7 +301,7 @@ function! s:project_manifest() dict abort
   return substitute(substitute(self._lock, '\.locked$', '.rb', ''), '\.lock$', '', '')
 endfunction
 
-call s:add_methods('project',['path', 'lock', 'manifest'])
+call s:add_methods('project',['real', 'lock', 'manifest'])
 
 function! s:project_locked() dict abort
   let lock_file = self.lock()
@@ -361,7 +361,7 @@ function! s:project_paths(...) dict abort
     endif
 
     try
-      exe chdir s:fnameescape(self.path())
+      exe chdir s:fnameescape(self.real())
 
       if empty(gem_paths)
         let gem_paths = split(system(prefix.'ruby -rrbconfig -rrubygems -e '.s:shellesc('print(([RbConfig::CONFIG["ruby_version"]] + Gem.path).join(%(;)))')), ';')
@@ -376,15 +376,15 @@ function! s:project_paths(...) dict abort
       exe chdir s:fnameescape(cwd)
     endtry
 
-    for config in [expand('~/.bundle/config'), self.path('.bundle/config')]
+    for config in [expand('~/.bundle/config'), self.real('.bundle/config')]
       if filereadable(config)
         let body = join(readfile(config), "\n")
         let bundle_path = matchstr(body, "\\C\\<BUNDLE_PATH: [\"']\\=\\zs[^\n'\"]*")
         if !empty(bundle_path)
           if body =~# '\C\<BUNDLE_DISABLE_SHARED_GEMS:'
-            let gem_paths = [self.path(bundle_path, 'ruby', abi_version)]
+            let gem_paths = [self.real(bundle_path, 'ruby', abi_version)]
           else
-            let gem_paths = [self.path(bundle_path)]
+            let gem_paths = [self.real(bundle_path)]
           endif
         endif
       endif
@@ -417,7 +417,7 @@ function! s:project_paths(...) dict abort
         if source.remote =~# '^\~/'
           let local = expand(source.remote)
         elseif source.remote !~# '^/'
-          let local = simplify(self.path(source.remote))
+          let local = simplify(self.real(source.remote))
         else
           let local = source.remote
         endif
@@ -567,7 +567,7 @@ function! s:push_chdir() abort
   if !exists("s:command_stack") | let s:command_stack = [] | endif
   let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir " : "chdir "
   call add(s:command_stack,chdir.s:fnameescape(getcwd()))
-  exe chdir.'`=s:project().path()`'
+  exe chdir.'`=s:project().real()`'
 endfunction
 
 function! s:pop_command() abort
@@ -583,12 +583,12 @@ function! s:Bundle(bang,arg) abort
   let cd = exists('*haslocaldir') && haslocaldir() ? 'lcd' : 'cd'
   let cwd = getcwd()
   try
-    execute cd fnameescape(s:project().path())
+    execute cd fnameescape(s:project().real())
     if a:arg =~# '^\s*console\>'
       let arg = substitute(a:arg, '^\s*console\s*', '', '')
       if exists(':Start') > 1
         execute 'Start'.a:bang '-title=' .
-              \ escape(fnamemodify(s:project().path(), ':t'), ' ') .
+              \ escape(fnamemodify(s:project().real(), ':t'), ' ') .
               \ '\ console bundle console' arg
       else
         execute '!bundle console' arg
