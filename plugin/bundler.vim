@@ -50,8 +50,17 @@ function! s:shellslash(path) abort
   endif
 endfunction
 
+function! s:fcall(fn, path, ...) abort
+  let ns = matchstr(a:path, '^\a\a\+\ze:')
+  if len(ns) && exists('*' . ns . '#' . a:fn)
+    return call(ns . '#' . a:fn, [a:path] + a:000)
+  else
+    return call(a:fn, [a:path] + a:000)
+  endif
+endfunction
+
 function! s:filereadable(path) abort
-  return filereadable(a:path)
+  return s:fcall('filereadable', a:path)
 endfunction
 
 function! s:completion_filter(results,A) abort
@@ -290,7 +299,13 @@ function! s:project(...) abort
 endfunction
 
 function! s:project_real(...) dict abort
-  return join([self.root]+a:000,'/')
+  let path = join([self.root]+a:000,'/')
+  let ns = matchstr(path, '^\a\a\+\ze:')
+  if len(ns) && exists('*' . ns . '#Path')
+    return call(ns . '#Path', [path])
+  else
+    return resolve(path)
+  endif
 endfunction
 
 function! s:project_lock() dict abort
@@ -305,14 +320,14 @@ call s:add_methods('project',['real', 'lock', 'manifest'])
 
 function! s:project_locked() dict abort
   let lock_file = self.lock()
-  let time = getftime(lock_file)
+  let time = s:fcall('getftime', lock_file)
   if time != -1 && time != get(self,'_lock_time',-1)
     let self._locked = {'git': [], 'gem': [], 'path': []}
     let self._versions = {}
     let self._dependencies = {}
     let section = ''
 
-    for line in readfile(lock_file)
+    for line in s:fcall('readfile', lock_file)
       if line =~# '^\S'
         let section = tr(tolower(line), ' ', '_')
         let properties = {'versions': {}}
