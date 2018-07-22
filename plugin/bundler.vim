@@ -300,9 +300,11 @@ endfunction
 
 function! s:project_real(...) dict abort
   let path = join([self.root]+a:000,'/')
-  let ns = matchstr(path, '^\a\a\+\ze:')
-  if len(ns) && exists('*' . ns . '#Path')
-    return call(ns . '#Path', [path])
+  let pre = substitute(matchstr(path, '^\a\a\+\ze:'), '^\a', '\u&', 'g')
+  if len(pre) && exists('*' . pre . 'Real')
+    return call(pre . 'Real', [path])
+  elseif len(pre) && exists('*' . pre . 'Path')
+    return call(pre . 'Path', [path])
   else
     return resolve(path)
   endif
