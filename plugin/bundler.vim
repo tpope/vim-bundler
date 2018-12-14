@@ -328,9 +328,18 @@ function! s:project_locked() dict abort
     let self._versions = {}
     let self._dependencies = {}
     let section = ''
+    let conflict = 0
 
     for line in s:fcall('readfile', lock_file)
-      if line =~# '^\S'
+      if line =~# '^[=|]'
+        let conflict = 1
+        continue
+      elseif line =~# '^>'
+        let conflict = 0
+        continue
+      elseif line =~# '^<' || conflict
+        continue
+      elseif line =~# '^\S'
         let section = tr(tolower(line), ' ', '_')
         let properties = {'versions': {}}
         if type(get(self._locked, section)) ==# type([])
