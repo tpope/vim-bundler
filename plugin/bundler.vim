@@ -381,6 +381,9 @@ function! s:project_paths(...) dict abort
       let prefix = ''
     endif
 
+    " Prevent JRuby from slowing things down
+    let prefix = prefix.'JRUBY_OPTS="--dev --disable-gems" '
+
     let gem_paths = []
     if exists('$GEM_PATH')
       let gem_paths = split($GEM_PATH, has('win32') ? ';' : ':')
