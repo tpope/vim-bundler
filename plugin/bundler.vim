@@ -2,7 +2,7 @@
 " Maintainer:   Tim Pope <http://tpo.pe/>
 " Version:      2.1
 
-if exists('g:loaded_bundler') || &cp || v:version < 700
+if exists('g:loaded_bundler') || &cp || v:version < 704
   finish
 endif
 let g:loaded_bundler = 1
@@ -31,14 +31,6 @@ function! s:shellesc(arg) abort
     return a:arg
   else
     return shellescape(a:arg)
-  endif
-endfunction
-
-function! s:fnameescape(file) abort
-  if exists('*fnameescape')
-    return fnameescape(a:file)
-  else
-    return escape(a:file," \t\n*?[{`$\\%#'\"|!<")
   endif
 endfunction
 
@@ -387,7 +379,7 @@ function! s:project_paths(...) dict abort
   if a:0 && a:1 ==# 'refresh' || time != -1 && time != get(self, '_path_time', -1)
     let paths = {}
 
-    let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir" : "chdir"
+    let chdir = haslocaldir() ? 'lcd' : exists(':tcd') && haslocaldir(-1) ? 'tcd' : 'cd'
     let cwd = getcwd()
 
     " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
@@ -403,7 +395,7 @@ function! s:project_paths(...) dict abort
     endif
 
     try
-      exe chdir s:fnameescape(self.real())
+      exe chdir fnameescape(self.real())
 
       if empty(gem_paths)
         let gem_paths = split(system(prefix.'ruby -rrbconfig -rrubygems -e '.s:shellesc('print(([RbConfig::CONFIG["ruby_version"]] + Gem.path).join(%(;)))')), ';')
@@ -413,9 +405,9 @@ function! s:project_paths(...) dict abort
         let abi_version = system(prefix.'ruby -rrbconfig -e '.s:shellesc('print RbConfig::CONFIG["ruby_version"]'))
       endif
 
-      exe chdir s:fnameescape(cwd)
+      exe chdir fnameescape(cwd)
     finally
-      exe chdir s:fnameescape(cwd)
+      exe chdir fnameescape(cwd)
     endtry
 
     for config in [expand('~/.bundle/config'), self.real('.bundle/config')]
@@ -603,8 +595,8 @@ call s:add_methods('buffer',['getvar','setvar','project'])
 
 function! s:push_chdir() abort
   if !exists("s:command_stack") | let s:command_stack = [] | endif
-  let chdir = exists("*haslocaldir") && haslocaldir() ? "lchdir " : "chdir "
-  call add(s:command_stack,chdir.s:fnameescape(getcwd()))
+  let chdir = haslocaldir() ? 'lcd' : exists(':tcd') && haslocaldir(-1) ? 'tcd' : 'cd'
+  call add(s:command_stack,chdir . fnameescape(getcwd()))
   exe chdir.'`=s:project().real()`'
 endfunction
 
@@ -618,7 +610,7 @@ function! s:Bundle(bang,arg) abort
   let old_makeprg = &l:makeprg
   let old_errorformat = &l:errorformat
   let old_compiler = get(b:, 'current_compiler', '')
-  let cd = exists('*haslocaldir') && haslocaldir() ? 'lcd' : 'cd'
+  let cd = haslocaldir() ? 'lcd' : exists(':tcd') && haslocaldir(-1) ? 'tcd' : 'cd'
   let cwd = getcwd()
   try
     execute cd fnameescape(s:project().real())
