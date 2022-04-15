@@ -43,11 +43,22 @@ function! s:fnameescape(file) abort
 endfunction
 
 function! s:shellslash(path) abort
-  if exists('+shellslash') && !&shellslash
-    return s:gsub(a:path,'\\','/')
+  if exists('+shellslash')
+    return tr(a:path, '\', '/')
   else
     return a:path
   endif
+endfunction
+
+function! s:Absolute(...) abort
+  if !a:0 && &buftype !~# '^\%(acwrite\|nowrite\)\=$'
+    return ''
+  endif
+  let path = s:shellslash(a:0 ? a:1 : @%)
+  if path !~# '^\a\+:\|^/\|^$'
+    let path = s:shellslash(getcwd()) . '/' . path
+  endif
+  return path
 endfunction
 
 function! s:fcall(fn, path, ...) abort
@@ -188,15 +199,14 @@ augroup END
 " Section: Initialization
 
 function! s:FindBundlerLock(path) abort
-  let path = s:shellslash(a:path)
-  let fn = fnamemodify(path,':s?[\/]$??')
+  let fn = substitute(s:Absolute(a:path), '/$', '', '')
   let ofn = ""
   let nfn = fn
   while fn !=# ofn && fn !=# '.'
     if s:filereadable(fn . '/Gemfile.lock') && s:filereadable(fn . '/Gemfile')
-      return s:sub(fnamemodify(fn,':p'), '[\\/]=$', '/Gemfile.lock')
+      return fn . '/Gemfile.lock'
     elseif s:filereadable(fn . '/gems.locked') && s:filereadable(fn . '/gems.rb')
-      return s:sub(fnamemodify(fn,':p'), '[\\/]=$', '/gems.locked')
+      return fn . '/gems.locked'
     endif
     let ofn = fn
     let fn = fnamemodify(ofn,':h')
@@ -224,8 +234,9 @@ function! s:Detect(path) abort
   return exists('b:bundler_lock')
 endfunction
 
-function! s:Setup(path) abort
-  if s:Detect(a:path)
+function! s:Setup() abort
+  let path = s:Absolute()
+  if s:Detect(path)
     silent doautocmd User Bundler
   endif
 endfunction
@@ -253,10 +264,10 @@ endfunction
 
 augroup bundler
   autocmd!
-  autocmd FileType               * call s:Setup(expand('<afile>:p'))
+  autocmd FileType               * call s:Setup()
   autocmd BufNewFile,BufReadPost *
         \ if empty(&filetype) |
-        \   call s:Setup(expand('<afile>:p')) |
+        \   call s:Setup() |
         \ endif
   autocmd User ProjectionistDetect call s:ProjectionistDetect()
   autocmd User ProjectionistActivate
@@ -272,7 +283,7 @@ let s:projects = {}
 
 function! bundler#project(...) abort
   if !a:0
-    let lock = !empty(get(b:, 'bundler_lock', '')) ? b:bundler_lock : s:FindBundlerLock(expand('%:p'))
+    let lock = !empty(get(b:, 'bundler_lock', '')) ? b:bundler_lock : s:FindBundlerLock(s:Absolute())
   elseif s:filereadable(a:1 . '/Gemfile.lock')
     let lock = a:1 . '/Gemfile.lock'
   elseif s:filereadable(a:1 . '/gems.locked')
