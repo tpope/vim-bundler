@@ -166,7 +166,6 @@ augroup bundler_syntax
   autocmd Syntax ruby
         \ if expand('<afile>:t') ==? 'gemfile' | call s:syntaxfile() | endif
   autocmd BufNewFile,BufRead [Gg]emfile.lock,gems.locked setf gemfilelock
-  autocmd FileType gemfilelock set suffixesadd=.rb
   autocmd Syntax gemfilelock call s:syntaxlock()
   autocmd FileType gemfilelock    call s:setuplock()
   autocmd User Rails/Gemfile.lock,Rails/gems.locked call s:setuplock()
@@ -540,37 +539,6 @@ endfunction
 
 call s:add_methods('project', ['locked', 'gems', 'paths', 'sorted', 'versions', 'has', 'dependencies', 'projections_list'])
 
-" Section: Buffer
-
-let s:buffer_prototype = {}
-
-function! s:buffer(...) abort
-  let buffer = {'#': bufnr(a:0 ? a:1 : '%')}
-  call extend(extend(buffer,s:buffer_prototype,'keep'),s:abstract_prototype,'keep')
-  if !empty(buffer.getvar('bundler_lock'))
-    return buffer
-  endif
-  call s:throw('not a Bundler project: '.(a:0 ? a:1 : expand('%')))
-endfunction
-
-function! bundler#buffer(...) abort
-  return s:buffer(a:0 ? a:1 : '%')
-endfunction
-
-function! s:buffer_getvar(var) dict abort
-  return getbufvar(self['#'],a:var)
-endfunction
-
-function! s:buffer_setvar(var,value) dict abort
-  return setbufvar(self['#'],a:var,a:value)
-endfunction
-
-function! s:buffer_project() dict abort
-  return s:project(self.getvar('bundler_lock'))
-endfunction
-
-call s:add_methods('buffer',['getvar','setvar','project'])
-
 " Section: Bundle
 
 function! s:push_chdir() abort
@@ -718,18 +686,18 @@ function! s:build_path_option(paths,suffix) abort
   return join(map(copy(a:paths),'",".escape(s:shellslash(v:val."/".a:suffix),", ")'),'')
 endfunction
 
-function! s:buffer_alter_paths() dict abort
-  if self.getvar('&suffixesadd') =~# '\.rb\>'
-    let gem = self.getvar('bundler_gem')
+function! s:AlterPaths(project, buf) abort
+  if !empty(a:project)
+    let gem = getbufvar(a:buf, 'bundler_gem')
     if empty(gem)
-      let new = self.project().sorted()
+      let new = a:project.sorted()
     else
-      let new = sort(values(self.project().dependencies(gem)))
+      let new = sort(values(a:project.dependencies(gem)))
     endif
-    let old = type(self.getvar('bundler_paths')) == type([]) ? self.getvar('bundler_paths') : []
+    let old = type(getbufvar(a:buf, 'bundler_paths')) == type([]) ? getbufvar(a:buf, 'bundler_paths') : []
     for [option, suffix] in
-          \ [['tags', get(self.project(), '_tags', 'tags')], ['path', 'lib']]
-      let value = self.getvar('&'.option)
+          \ [['tags', get(a:project, '_tags', 'tags')], ['path', 'lib']]
+      let value = getbufvar(a:buf, '&'.option)
       let tail = matchstr(value, '\%(,\.\)\=\%(,,\)\=$')
       let value = strpart(value, 0, len(value) - len(tail))
       if !empty(old)
@@ -739,18 +707,16 @@ function! s:buffer_alter_paths() dict abort
           let value = value[0:index-1] . value[index+strlen(drop):-1]
         endif
       endif
-      call self.setvar('&'.option,value.s:build_path_option(new, suffix) . tail)
+      call setbufvar(a:buf, '&'.option, value.s:build_path_option(new, suffix) . tail)
     endfor
-    call self.setvar('bundler_paths',new)
+    call setbufvar(a:buf, 'bundler_paths', new)
   endif
 endfunction
 
-call s:add_methods('buffer',['alter_paths'])
-
 function! s:project_alter_buffer_paths() dict abort
   for bufnr in range(1,bufnr('$'))
-    if getbufvar(bufnr,'bundler_lock') ==# self.lock()
-      let vim_parsing_quirk = s:buffer(bufnr).alter_paths()
+    if getbufvar(bufnr, 'bundler_lock') ==# self.lock() && getbufvar(bufnr, '&suffixesadd') =~# '\.rb\>'
+      call s:AlterPaths(self, bufnr)
     endif
     if getbufvar(bufnr, '&syntax') ==# 'gemfilelock'
       call setbufvar(bufnr, '&syntax', 'gemfilelock')
@@ -762,7 +728,10 @@ call s:add_methods('project',['alter_buffer_paths'])
 
 augroup bundler_path
   autocmd!
-  autocmd User Bundler call s:buffer().alter_paths()
+  autocmd User Bundler
+        \ if &suffixesadd =~# '\.rb\>' |
+        \   call s:AlterPaths(bundler#project(), bufnr('')) |
+        \ endif
 augroup END
 
 " vim:set sw=2 sts=2:
