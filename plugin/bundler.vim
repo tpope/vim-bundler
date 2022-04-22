@@ -99,22 +99,6 @@ function! s:add_methods(namespace, method_names) abort
   endfor
 endfunction
 
-let s:commands = []
-function! s:command(definition) abort
-  let s:commands += [a:definition]
-endfunction
-
-function! s:define_commands() abort
-  for command in s:commands
-    exe 'command! -buffer '.command
-  endfor
-endfunction
-
-augroup bundler_utility
-  autocmd!
-  autocmd User Bundler call s:define_commands()
-augroup END
-
 let s:abstract_prototype = {}
 
 " Section: Syntax highlighting
@@ -262,10 +246,6 @@ augroup bundler
         \   call s:Setup() |
         \ endif
   autocmd User ProjectionistDetect call s:ProjectionistDetect()
-  autocmd User ProjectionistActivate
-        \ if exists('b:bundler_lock') && !exists(':Bopen') |
-        \   silent doautocmd User Bundler |
-        \ endif
 augroup END
 
 " Section: Project
@@ -607,6 +587,9 @@ function! s:pop_command() abort
 endfunction
 
 function! s:Bundle(bang,arg) abort
+  if empty(bundler#project())
+    return 'echoerr ' . string('Bundler manifest not found')
+  endif
   let old_makeprg = &l:makeprg
   let old_errorformat = &l:errorformat
   let old_compiler = get(b:, 'current_compiler', '')
@@ -655,7 +638,7 @@ function! bundler#complete(A, L, P, ...) abort
   return s:completion_filter(['install','update','exec','package','config','check','list','show','outdated','console','viz','benchmark'], a:A)
 endfunction
 
-call s:command("-bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle :execute s:Bundle('<bang>',<q-args>)")
+command! -bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle exe s:Bundle('<bang>',<q-args>)
 
 function! s:IsBundlerMake() abort
   return &makeprg =~# '^bundle' && exists('b:bundler_lock')
@@ -679,15 +662,14 @@ endfunction
 augroup bundler_command
   autocmd QuickFixCmdPre *make* call s:QuickFixCmdPreMake()
   autocmd QuickFixCmdPost *make* call s:QuickFixCmdPostMake()
-  autocmd User Bundler
-        \ if exists(':Console') < 2 |
-        \   exe "command! -buffer -bar -bang -nargs=* Console :Bundle<bang> console <args>" |
-        \ endif
 augroup END
 
 " Section: Bopen
 
 function! s:Open(cmd,gem,lcd) abort
+  if empty(bundler#project())
+    return 'echoerr ' . string('Bundler manifest not found')
+  endif
   if a:gem ==# '' && a:lcd
     return a:cmd.' '.fnameescape(s:project().manifest())
   elseif a:gem ==# ''
@@ -716,15 +698,19 @@ function! s:Open(cmd,gem,lcd) abort
 endfunction
 
 function! s:OpenComplete(A,L,P) abort
-  return s:completion_filter(keys(s:project().paths()),a:A)
+  let project = bundler#project()
+  if empty(project)
+    return []
+  endif
+  return s:completion_filter(keys(project.paths()), a:A)
 endfunction
 
-call s:command("-bar -bang -nargs=? -complete=customlist,s:OpenComplete Bopen :execute s:Open('edit<bang>',<q-args>,1)")
-call s:command("-bar -bang -nargs=? -complete=customlist,s:OpenComplete Bedit :execute s:Open('edit<bang>',<q-args>,0)")
-call s:command("-bar -bang -nargs=? -complete=customlist,s:OpenComplete Bsplit :execute s:Open('split',<q-args>,<bang>1)")
-call s:command("-bar -bang -nargs=? -complete=customlist,s:OpenComplete Bvsplit :execute s:Open('vsplit',<q-args>,<bang>1)")
-call s:command("-bar -bang -nargs=? -complete=customlist,s:OpenComplete Btabedit :execute s:Open('tabedit',<q-args>,<bang>1)")
-call s:command("-bar -bang -nargs=? -complete=customlist,s:OpenComplete Bpedit :execute s:Open('pedit',<q-args>,<bang>1)")
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bopen    exe s:Open('edit<bang>', <q-args>,1)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bedit    exe s:Open('edit<bang>', <q-args>,0)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bsplit   exe s:Open('split', <q-args>, <bang>1)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bvsplit  exe s:Open('vsplit', <q-args>, <bang>1)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Btabedit exe s:Open('tabedit', <q-args>, <bang>1)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bpedit   exe s:Open('pedit', <q-args>, <bang>1)
 
 " Section: Paths
 
