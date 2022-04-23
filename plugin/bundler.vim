@@ -548,7 +548,18 @@ function! s:pop_command() abort
   endif
 endfunction
 
-function! s:Bundle(bang,arg) abort
+function! s:Bundle(bang, mods, arg) abort
+  let mods = a:mods ==# '<mods>' ? '' : a:mods
+  if a:arg =~# '^open\>'
+    if mods !~# '\<\%(aboveleft\|belowright\|leftabove\|rightbelow\|topleft\|botright\|tab\)\>'
+      let mods .= ' ' . get(g:, 'bundler_open_default_modifier', 'tab')
+    endif
+    return s:Open(mods . ' split', matchstr(a:arg, '\s\+["'']\=\zs.*[^"'']'), a:bang !=# '!')
+  endif
+  let delegate = matchstr(a:arg, '^:\zs\%(e\%[dit]\|v\=sp\%[lit]\|tabe\%[dit]\|ped\%[it]\|s\=find\=\|tabf\%[ind]\|dr\%[op]\|s\=view\=\|[tl]\=cd\|[tl]\=chd\%[ir]\)\>!\=')
+  if len(delegate)
+    return s:Open(mods . ' ' . delegate, matchstr(a:arg, '\s\+\zs.*'), 0)
+  endif
   if empty(bundler#project())
     return 'echoerr ' . string('Bundler manifest not found')
   endif
@@ -618,7 +629,7 @@ function! bundler#complete(A, L, P, ...) abort
   let cmd = matchstr(a:L, '\C\u\w*[! ] *\zs\S\+\ze ')
   if empty(cmd)
     return s:completion_filter(keys(s:completions), a:A)
-  elseif get(s:completions, cmd, '') is# 'gem'
+  elseif get(s:completions, cmd, '') is# 'gem' || cmd =~# '^:'
     return s:completion_filter(empty(project) ? [] : keys(project.paths()), a:A)
   elseif cmd ==# 'exec'
     return getcompletion(a:A, a:L =~# '\u\w*[! ] *\zs\S\+ \+\S*$' ? 'shellcmd' : 'file')
@@ -627,7 +638,7 @@ function! bundler#complete(A, L, P, ...) abort
   endif
 endfunction
 
-command! -bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle exe s:Bundle('<bang>',<q-args>)
+command! -bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle exe s:Bundle('<bang>', '<mods>', <q-args>)
 
 function! s:IsBundlerMake() abort
   return &makeprg =~# '^bundle' && exists('b:bundler_lock')
@@ -660,7 +671,9 @@ function! s:Open(cmd,gem,lcd) abort
     return 'echoerr ' . string('Bundler manifest not found')
   endif
   let exec = substitute(a:cmd, '^<mods> ', '', '')
-  if a:gem ==# '' && a:lcd
+  if a:gem ==# '' && a:cmd =~# '\<[tl]\=ch\=d'
+    return exec . ' ' . fnameescape(s:project().real())
+  elseif a:gem ==# '' && a:lcd
     return exec . ' ' . fnameescape(s:project().manifest())
   elseif a:gem ==# ''
     return exec . ' ' . fnameescape(s:project().lock())
