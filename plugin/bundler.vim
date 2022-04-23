@@ -560,8 +560,13 @@ function! s:Bundle(bang, mods, arg) abort
   if len(delegate)
     return s:Open(mods . ' ' . delegate, matchstr(a:arg, '\s\+\zs.*'), 0)
   endif
-  if empty(bundler#project())
-    return 'echoerr ' . string('Bundler manifest not found')
+  if a:arg =~# '^\%(init\|gem\)\>'
+    let project = {}
+  else
+    let project = bundler#project()
+    if empty(project)
+      return 'echoerr ' . string('Bundler manifest not found')
+    endif
   endif
   let old_makeprg = &l:makeprg
   let old_errorformat = &l:errorformat
@@ -569,7 +574,9 @@ function! s:Bundle(bang, mods, arg) abort
   let cd = haslocaldir() ? 'lcd' : exists(':tcd') && haslocaldir(-1) ? 'tcd' : 'cd'
   let cwd = getcwd()
   try
-    execute cd fnameescape(s:project().real())
+    if !empty(project)
+      execute cd fnameescape(project.real())
+    endif
     if a:arg =~# '^\s*console\>'
       let arg = substitute(a:arg, '^\s*console\s*', '', '')
       if exists(':Start') > 1
@@ -617,7 +624,7 @@ let s:completions = {
       \ 'open': 'gem',
       \ 'viz': '',
       \ 'init': '',
-      \ 'gem': '',
+      \ 'gem': 'dir',
       \ 'platform': '',
       \ 'clean': '',
       \ 'doctor': '',
@@ -633,6 +640,8 @@ function! bundler#complete(A, L, P, ...) abort
     return s:completion_filter(empty(project) ? [] : keys(project.paths()), a:A)
   elseif cmd ==# 'exec'
     return getcompletion(a:A, a:L =~# '\u\w*[! ] *\zs\S\+ \+\S*$' ? 'shellcmd' : 'file')
+  elseif has_key(s:completions, cmd)
+    return getcompletion(a:A, s:completions[cmd])
   else
     return []
   endif
