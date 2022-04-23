@@ -592,12 +592,39 @@ function! s:BundleComplete(A, L, P) abort
   return bundler#complete(a:A, a:L, a:P, bundler#project())
 endfunction
 
+let s:completions = {
+      \ 'install': '',
+      \ 'update': 'gem',
+      \ 'package': '',
+      \ 'exec': '',
+      \ 'config': '',
+      \ 'add': 'gem',
+      \ 'binstubs': 'gem',
+      \ 'check': '',
+      \ 'show': 'gem',
+      \ 'outdated': 'gem',
+      \ 'open': 'gem',
+      \ 'viz': '',
+      \ 'init': '',
+      \ 'gem': '',
+      \ 'platform': '',
+      \ 'clean': '',
+      \ 'doctor': '',
+      \ 'remove': 'gem',
+      \ }
+
 function! bundler#complete(A, L, P, ...) abort
   let project = a:0 ? a:1 : bundler#project(getcwd())
-  if !empty(project) && a:L =~# '\s\+\%(show\|update\) '
-    return s:completion_filter(keys(project.paths()), a:A)
+  let cmd = matchstr(a:L, '\C\u\w*[! ] *\zs\S\+\ze ')
+  if empty(cmd)
+    return s:completion_filter(keys(s:completions), a:A)
+  elseif get(s:completions, cmd, '') is# 'gem'
+    return s:completion_filter(empty(project) ? [] : keys(project.paths()), a:A)
+  elseif cmd ==# 'exec'
+    return getcompletion(a:A, a:L =~# '\u\w*[! ] *\zs\S\+ \+\S*$' ? 'shellcmd' : 'file')
+  else
+    return []
   endif
-  return s:completion_filter(['install','update','exec','package','config','check','list','show','outdated','console','viz','benchmark'], a:A)
 endfunction
 
 command! -bar -bang -nargs=? -complete=customlist,s:BundleComplete Bundle exe s:Bundle('<bang>',<q-args>)
