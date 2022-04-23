@@ -539,7 +539,7 @@ function! s:push_chdir() abort
   if !exists("s:command_stack") | let s:command_stack = [] | endif
   let chdir = haslocaldir() ? 'lcd' : exists(':tcd') && haslocaldir(-1) ? 'tcd' : 'cd'
   call add(s:command_stack,chdir . fnameescape(getcwd()))
-  exe chdir.'`=s:project().real()`'
+  exe chdir fnameescape(s:project().real())
 endfunction
 
 function! s:pop_command() abort
