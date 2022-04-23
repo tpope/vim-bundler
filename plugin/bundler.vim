@@ -632,10 +632,11 @@ function! s:Open(cmd,gem,lcd) abort
   if empty(bundler#project())
     return 'echoerr ' . string('Bundler manifest not found')
   endif
+  let exec = substitute(a:cmd, '^<mods> ', '', '')
   if a:gem ==# '' && a:lcd
-    return a:cmd.' '.fnameescape(s:project().manifest())
+    return exec . ' ' . fnameescape(s:project().manifest())
   elseif a:gem ==# ''
-    return a:cmd.' '.fnameescape(s:project().lock())
+    return exec . ' ' . fnameescape(s:project().lock())
   else
     if !has_key(s:project().paths(), a:gem)
       call s:project().paths('refresh')
@@ -649,11 +650,12 @@ function! s:Open(cmd,gem,lcd) abort
       return 'echoerr v:errmsg'
     endif
     let path = fnameescape(s:project().paths()[a:gem])
-    let exec = a:cmd.' '.path
-    if a:cmd =~# '^pedit' && a:lcd
-      let exec .= '|wincmd P|lcd '.path.'|wincmd p'
-    elseif a:lcd
-      let exec .= '|lcd '.path
+    if !a:lcd
+      let exec .= ' ' . path
+    elseif a:cmd =~# '\<pe'
+      let exec .= ' +lcd\ ' . path . ' ' . path
+    else
+      let exec .= ' ' . path . '|lcd ' . path
     endif
     return exec
   endif
@@ -667,12 +669,12 @@ function! s:OpenComplete(A,L,P) abort
   return s:completion_filter(keys(project.paths()), a:A)
 endfunction
 
-command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bopen    exe s:Open('edit<bang>', <q-args>,1)
-command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bedit    exe s:Open('edit<bang>', <q-args>,0)
-command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bsplit   exe s:Open('split', <q-args>, <bang>1)
-command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bvsplit  exe s:Open('vsplit', <q-args>, <bang>1)
-command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Btabedit exe s:Open('tabedit', <q-args>, <bang>1)
-command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bpedit   exe s:Open('pedit', <q-args>, <bang>1)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bopen    exe s:Open('<mods> edit<bang>', <q-args>,1)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bedit    exe s:Open('<mods> edit<bang>', <q-args>,0)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bsplit   exe s:Open('<mods> split', <q-args>, <bang>1)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bvsplit  exe s:Open('<mods> vsplit', <q-args>, <bang>1)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Btabedit exe s:Open('<mods> tabedit', <q-args>, <bang>1)
+command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bpedit   exe s:Open('<mods> pedit', <q-args>, <bang>1)
 
 " Section: Paths
 
