@@ -165,10 +165,10 @@ augroup bundler_syntax
         \ if &filetype !=# 'ruby' | setf ruby | endif
   autocmd Syntax ruby
         \ if expand('<afile>:t') ==? 'gemfile' | call s:syntaxfile() | endif
-  autocmd BufNewFile,BufRead [Gg]emfile.lock,gems.locked setf gemfilelock
+  autocmd BufNewFile,BufRead [Gg]emfile.lock setf gemfilelock
   autocmd Syntax gemfilelock call s:syntaxlock()
   autocmd FileType gemfilelock    call s:setuplock()
-  autocmd User Rails/Gemfile.lock,Rails/gems.locked call s:setuplock()
+  autocmd User Rails/Gemfile.lock call s:setuplock()
 augroup END
 
 " Section: Initialization
@@ -180,8 +180,6 @@ function! s:FindBundlerLock(path) abort
   while fn !=# ofn && fn !=# '.'
     if s:filereadable(fn . '/Gemfile.lock') && s:filereadable(fn . '/Gemfile')
       return fn . '/Gemfile.lock'
-    elseif s:filereadable(fn . '/gems.locked') && s:filereadable(fn . '/gems.rb')
-      return fn . '/gems.locked'
     endif
     let ofn = fn
     let fn = fnamemodify(ofn,':h')
@@ -228,8 +226,6 @@ function! s:ProjectionistDetect() abort
           \ '*': s:filereadable(dir . '/config/environment.rb') ? {} :
           \ {'console': 'bundle console'},
           \ 'Gemfile': {'dispatch': 'bundle %:s/.*/\=bundler#manifest_task(exists(''l#'') ? l# : 0)/ --gemfile={file}', 'alternate': 'Gemfile.lock'},
-          \ 'gems.rb': {'dispatch': 'bundle %:s/.*/\=bundler#manifest_task(exists(''l#'') ? l# : 0)/ --gemfile={file}', 'alternate': 'gems.locked'},
-          \ 'gems.locked': {'alternate': 'gems.rb'},
           \ 'Gemfile.lock': {'alternate': 'Gemfile'}})
     for projections in bundler#project().projections_list()
       call projectionist#append(fnamemodify(b:bundler_lock, ':h'), projections)
@@ -257,8 +253,6 @@ function! bundler#project(...) abort
     let lock = !empty(get(b:, 'bundler_lock', '')) ? b:bundler_lock : s:FindBundlerLock(s:Absolute())
   elseif s:filereadable(a:1 . '/Gemfile.lock')
     let lock = a:1 . '/Gemfile.lock'
-  elseif s:filereadable(a:1 . '/gems.locked')
-    let lock = a:1 . '/gems.locked'
   elseif s:filereadable(a:1)
     let lock = a:1
   else
