@@ -355,16 +355,16 @@ function! s:project_paths(...) dict abort
     let chdir = haslocaldir() ? 'lcd' : exists(':tcd') && haslocaldir(-1) ? 'tcd' : 'cd'
     let cwd = getcwd()
 
-    " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
-    if executable('env')
-      let prefix = 'env PATH='.s:shellesc($PATH).' '
-    else
-      let prefix = ''
-    endif
-
     let gem_paths = []
     if exists('$GEM_PATH')
       let gem_paths = split($GEM_PATH, has('win32') ? ';' : ':')
+    endif
+
+    " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
+    if executable('env')
+      let prefix = 'env PATH='.s:shellesc($PATH) . ' JRUBY_OPTS='.s:shellesc('--dev')
+    else
+      let prefix = ''
     endif
 
     try
