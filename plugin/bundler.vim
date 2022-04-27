@@ -375,7 +375,7 @@ function! s:project_paths(...) dict abort
 
         let abi_version = empty(gem_paths) ? '' : remove(gem_paths, 0)
       else
-        let abi_version = system(prefix.'ruby -rrbconfig -e '.s:shellesc('print RbConfig::CONFIG["ruby_version"]'))
+        let abi_version = system(prefix.'ruby -rrbconfig --disable-rubygems -e '.s:shellesc('print RbConfig::CONFIG["ruby_version"]'))
       endif
 
       exe chdir fnameescape(cwd)
