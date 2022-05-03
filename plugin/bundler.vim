@@ -506,15 +506,27 @@ function! s:project_projections_list() dict abort
     if !empty(get(g:, 'gem_projections', {}))
       for name in keys(self.versions())
         if has_key(g:gem_projections, name)
-          call add(list, g:gem_projections[name])
+          if type(g:gem_projections[name]) ==# type('')
+            let file = g:gem_projections[name]
+            if file !~# '^\a\+:\|^/'
+              if !has_key(self.paths(), name)
+                continue
+              endif
+              let file = self.paths()[name] . '/' . file
+            endif
+            if file =~# '/$'
+              let file .= 'projections.json'
+            endif
+            try
+              call add(list, rails#json_parse(readfile(file)))
+            catch
+            endtry
+          elseif type(g:gem_projections[name]) ==# type({})
+            call add(list, g:gem_projections[name])
+          endif
         endif
       endfor
     endif
-    for path in self.sorted()
-      if filereadable(path . '/lib/projections.json')
-        call add(list, projectionist#json_parse(readfile(path . '/lib/projections.json')))
-      endif
-    endfor
   endif
   return self._projections_list
 endfunction
