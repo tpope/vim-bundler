@@ -362,7 +362,7 @@ function! s:project_paths(...) dict abort
 
     " Explicitly setting $PATH means /etc/zshenv on OS X can't touch it.
     if executable('env')
-      let prefix = 'env PATH='.s:shellesc($PATH) . ' JRUBY_OPTS='.s:shellesc('--dev')
+      let prefix = 'env PATH='.s:shellesc($PATH) . ' JRUBY_OPTS='.s:shellesc('--dev') . ' '
     else
       let prefix = ''
     endif
