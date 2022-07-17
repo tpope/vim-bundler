@@ -163,7 +163,7 @@ endfunction
 augroup bundler_syntax
   autocmd!
   autocmd BufNewFile,BufRead */.bundle/config set filetype=yaml
-  autocmd BufNewFile,BufRead Gemfile,gems.rb
+  autocmd BufNewFile,BufRead Gemfile
         \ if &filetype !=# 'ruby' | setf ruby | endif
   autocmd Syntax ruby
         \ if expand('<afile>:t') ==? 'gemfile' | call s:syntaxfile() | endif
