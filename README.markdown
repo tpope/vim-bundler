@@ -6,8 +6,7 @@ This is a lightweight bag of Vim goodies for
 [rails.vim](https://github.com/tpope/vim-rails).  Features:
 
 * `:Bundle`, which wraps `bundle`.
-* An internalized version of `bundle open`: `:Bopen` (and `:Bsplit`,
-  `:Btabedit`, etc.).
+* `:Bundle open`, which opens a gem inside the current Vim instance.
 * `'path'` and `'tags'` are automatically altered to include all gems
   from your bundle.  (Generate those tags with
   [gem-ctags](https://github.com/tpope/gem-ctags)!)

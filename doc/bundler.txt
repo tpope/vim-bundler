@@ -17,6 +17,9 @@ COMMANDS                                        *bundler-commands*
                                                 *bundler-:Bundle*
 :Bundle[!] [args]       Invoke `bundle` via |:make|.
 
+:Bundle open {gem}      Effectively does a `bundle open` inside of the current
+                        Vim. instance  Defaults to a new tab.  Use mods like
+                        |:rightbelow| to use a split instead.
 
                                                 *bundler-:Bopen*
 :Bopen[!] [gem]         With no argument, edits the Gemfile.  Otherwise,
