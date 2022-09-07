@@ -217,18 +217,23 @@ function! s:Setup() abort
 endfunction
 
 function! bundler#manifest_task(lnum) abort
-  let gem = matchstr(getline(a:lnum), '^ *gem *(\= *[''"]\zs[^''\"]\+\ze[''"]')
+  if &filetype ==# 'gemfilelock'
+    let gem = matchstr(getline(a:lnum), '^ \{4,\}\zs\S\+\ze (.*)$')
+  else
+    let gem = matchstr(getline(a:lnum), '^ *gem *(\= *[''"]\zs[^''\"]\+\ze[''"]')
+  endif
   return len(gem) ? 'update ' . gem : 'install'
 endfunction
 
 function! s:ProjectionistDetect() abort
   if s:Detect(get(g:, 'projectionist_file', '')) && !exists('b:bundler_gem')
     let dir = fnamemodify(b:bundler_lock, ':h')
+    let dispatch = 'bundle %:s/.*/\=bundler#manifest_task(exists(''l#'') ? l# : 0)/ --gemfile={project}/Gemfile'
     call projectionist#append(dir, {
           \ '*': s:filereadable(dir . '/config/environment.rb') ? {} :
           \ {'console': 'bundle console'},
-          \ 'Gemfile': {'dispatch': 'bundle %:s/.*/\=bundler#manifest_task(exists(''l#'') ? l# : 0)/ --gemfile={file}', 'alternate': 'Gemfile.lock'},
-          \ 'Gemfile.lock': {'alternate': 'Gemfile'}})
+          \ 'Gemfile': {'dispatch': dispatch, 'alternate': 'Gemfile.lock'},
+          \ 'Gemfile.lock': {'dispatch': dispatch, 'alternate': 'Gemfile'}})
     for projections in bundler#project().projections_list()
       call projectionist#append(fnamemodify(b:bundler_lock, ':h'), projections)
     endfor
