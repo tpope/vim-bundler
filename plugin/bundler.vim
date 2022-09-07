@@ -530,6 +530,7 @@ function! s:project_projections_list() dict abort
   endif
   let list = []
   let gem_projections = type(get(g:, 'gem_projections')) == type({}) ? g:gem_projections : {}
+  let loaded_files = {}
   for name in empty(gem_projections) ? [] : keys(self.versions())
     if type(get(gem_projections, name)) ==# type({})
       call add(list, gem_projections[name])
@@ -544,11 +545,20 @@ function! s:project_projections_list() dict abort
       if file =~# '/$'
         let file .= 'projections.json'
       endif
+      let loaded_files[file] = 1
       if filereadable(file)
         call add(list, file)
       endif
     endif
   endfor
+  if get(g:, 'bundler_projections_inside_gems', 1)
+    for path in self.sorted()
+      let file = path . '/lib/projections.json'
+      if !has_key(loaded_files, file) && filereadable(file)
+        call add(list, file)
+      endif
+    endfor
+  endif
   lockvar! list
   let self._projections_list = list
   return self._projections_list
