@@ -312,9 +312,9 @@ function! s:project_locked() dict abort
   let lock_file = self.lock()
   let time = s:fcall('getftime', lock_file)
   if time != -1 && time != get(self,'_lock_time',-1)
-    let self._locked = {'git': [], 'gem': [], 'path': []}
-    let self._versions = {}
-    let self._dependencies = {}
+    let locked = {'git': [], 'gem': [], 'path': []}
+    let versions = {}
+    let dependencies = {}
     let section = ''
     let conflict = 0
 
@@ -330,8 +330,8 @@ function! s:project_locked() dict abort
       elseif line =~# '^\S'
         let section = tr(tolower(line), ' ', '_')
         let properties = {'versions': {}}
-        if type(get(self._locked, section)) ==# type([])
-          call extend(self._locked[section], [properties])
+        if type(get(locked, section)) ==# type([])
+          call extend(locked[section], [properties])
         endif
       elseif line =~# '^  \w\+: '
         let properties[matchstr(line, '\w\+')] = matchstr(line, ': \zs.*')
@@ -339,15 +339,19 @@ function! s:project_locked() dict abort
         let name = split(line, ' ')[0]
         let ver = substitute(line, '.*(\|).*', '', 'g')
         let properties.versions[name] = ver
-        let self._versions[name] = ver
-        let self._dependencies[name] = []
+        let versions[name] = ver
+        let dependencies[name] = []
       elseif line =~# '^      [a-zA-Z0-9._-]\+\s\+('
         let dep = split(line, ' ')[0]
-        call add(self._dependencies[name], dep)
-      elseif line =~# '^   \S' && !has_key(self._locked, section)
-        let self._locked[section] = line[3:-1]
+        call add(dependencies[name], dep)
+      elseif line =~# '^   \S' && !has_key(locked, section)
+        let locked[section] = line[3:-1]
       endif
     endfor
+    lockvar! locked versions dependencies
+    let self._locked = locked
+    let self._versions = versions
+    let self._dependencies = dependencies
     let self._lock_time = time
   endif
   return get(self, '_locked', {})
@@ -464,13 +468,15 @@ function! s:project_paths(...) dict abort
     if has_key(self, '_projections_list')
       call remove(self, '_projections_list')
     endif
+    let sorted = sort(values(paths))
+    let index = index(sorted, fnamemodify(self.lock(), ':h'))
+    if index > 0
+      call insert(sorted, remove(sorted,index))
+    endif
+    lockvar! paths sorted
     let self._path_time = time
     let self._paths = paths
-    let self._sorted = sort(values(paths))
-    let index = index(self._sorted, fnamemodify(self.lock(), ':h'))
-    if index > 0
-      call insert(self._sorted, remove(self._sorted,index))
-    endif
+    let self._sorted = sorted
     if len(self._sorted) > 1 && filereadable(self._sorted[1] . '/lib/tags') &&
           \ !filereadable(self._sorted[1] . '/tags')
       let self._tags = 'lib/tags'
