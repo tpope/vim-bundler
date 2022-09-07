@@ -27,19 +27,6 @@ support:
     git clone https://tpope.io/vim/bundler.git
     vim -u NONE -c "helptags bundler/doc" -c q
 
-## FAQ
-
-> I installed the plugin and started Vim.  Why don't any of the commands
-> exist?
-
-This plugin cares about the current file, not the current working
-directory.  Edit a file that's covered by a `Gemfile`.
-
-> I opened a new tab.  Why don't any of the commands exist?
-
-This plugin cares about the current file, not the current working
-directory.  Edit a file that's covered by a `Gemfile`.
-
 ## Self-Promotion
 
 Like bundler.vim? Follow the repository on
