@@ -43,10 +43,12 @@ function! s:shellslash(path) abort
 endfunction
 
 function! s:Absolute(...) abort
-  if !a:0 && &buftype !~# '^\%(acwrite\|nowrite\)\=$'
+  let path = s:shellslash(a:0 ? a:1 : @%)
+  if !a:0 && &buftype =~# '^\%(nofile\|acwrite\)' && path =~# '^\a\+:\|^/'
+    return path
+  elseif !a:0 && &buftype !~# '^\%(nowrite\)\=$'
     return ''
   endif
-  let path = s:shellslash(a:0 ? a:1 : @%)
   if path !~# '^\a\+:\|^/\|^$'
     let path = s:shellslash(getcwd()) . '/' . path
   endif
