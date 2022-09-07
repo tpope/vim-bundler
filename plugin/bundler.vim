@@ -147,7 +147,7 @@ function! s:setuplock() abort
   cnoremap <buffer><expr> <Plug><cfile> get(bundler#project().gems(),expand("<cfile>"),"\022\006")
   let pattern = '^$\|Rails'
   if mapcheck('gf', 'n') =~# pattern
-    nnoremap <silent><buffer> gf         :Bopen    <C-R><C-F><CR>
+    nnoremap <silent><buffer> gf         :<C-U>Bundle :edit <C-R><C-F><CR>
   endif
   if mapcheck('<C-W>f', 'n') =~# pattern
     nnoremap <silent><buffer> <C-W>f     :Bsplit   <C-R><C-F><CR>
