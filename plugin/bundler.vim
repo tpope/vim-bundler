@@ -150,13 +150,13 @@ function! s:setuplock() abort
     nnoremap <silent><buffer> gf         :<C-U>Bundle :edit <C-R><C-F><CR>
   endif
   if mapcheck('<C-W>f', 'n') =~# pattern
-    nnoremap <silent><buffer> <C-W>f     :Bsplit   <C-R><C-F><CR>
+    nnoremap <silent><buffer> <C-W><C-F> :<C-U> exe s:Bundle('', &sb ? 'belowright' : 'aboveleft', expand('<cfile>'))<CR>
   endif
   if mapcheck('<C-W><C-F>', 'n') =~# pattern
-    nnoremap <silent><buffer> <C-W><C-F> :Bsplit   <C-R><C-F><CR>
+    nnoremap <silent><buffer> <C-W><C-F> :<C-U> exe s:Bundle('', &sb ? 'belowright' : 'aboveleft', expand('<cfile>'))<CR>
   endif
   if mapcheck('<C-W>gf', 'n') =~# pattern
-    nnoremap <silent><buffer> <C-W>gf    :Btabedit <C-R><C-F><CR>
+    nnoremap <silent><buffer> <C-W>gf    :<C-U> exe s:Bundle('', 'tab', expand('<cfile>'))<CR>
   endif
 endfunction
 
