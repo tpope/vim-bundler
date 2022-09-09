@@ -521,35 +521,34 @@ function! s:project_has(gem) dict abort
 endfunction
 
 function! s:project_projections_list() dict abort
-  call self.paths()
-  if !has_key(self, '_projections_list')
-    let self._projections_list = []
-    let list = self._projections_list
-    if !empty(get(g:, 'gem_projections', {}))
-      for name in keys(self.versions())
-        if has_key(g:gem_projections, name)
-          if type(g:gem_projections[name]) ==# type('')
-            let file = g:gem_projections[name]
-            if file !~# '^\a\+:\|^/'
-              if !has_key(self.paths(), name)
-                continue
-              endif
-              let file = self.paths()[name] . '/' . file
-            endif
-            if file =~# '/$'
-              let file .= 'projections.json'
-            endif
-            try
-              call add(list, rails#json_parse(readfile(file)))
-            catch
-            endtry
-          elseif type(g:gem_projections[name]) ==# type({})
-            call add(list, g:gem_projections[name])
-          endif
-        endif
-      endfor
-    endif
+  if has_key(self, '_projections_list')
+    return self._projections_list
   endif
+  let json_decode = exists('*json_decode') ? 'json_decode' : 'projectionist#json_parse'
+  let self._projections_list = []
+  let list = self._projections_list
+  let gem_projections = type(get(g:, 'gem_projections')) == type({}) ? g:gem_projections : {}
+  for name in empty(gem_projections) ? [] : keys(self.versions())
+    if type(get(gem_projections, name)) ==# type({})
+      call add(list, gem_projections[name])
+    elseif type(get(gem_projections, name)) ==# type('') && !empty(gem_projections[name])
+      let file = gem_projections[name]
+      if file !~# '^\a\+:\|^/'
+        if !has_key(self.paths(), name)
+          continue
+        endif
+        let file = self.paths()[name] . '/' . file
+      endif
+      if file =~# '/$'
+        let file .= 'projections.json'
+      endif
+      try
+        call add(list, call(json_decode, [join(readfile(file))]))
+      catch
+      endtry
+    endif
+  endfor
+  lockvar! list
   return self._projections_list
 endfunction
 
