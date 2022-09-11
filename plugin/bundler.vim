@@ -524,7 +524,6 @@ function! s:project_projections_list() dict abort
   if has_key(self, '_projections_list')
     return self._projections_list
   endif
-  let json_decode = exists('*json_decode') ? 'json_decode' : 'projectionist#json_parse'
   let self._projections_list = []
   let list = self._projections_list
   let gem_projections = type(get(g:, 'gem_projections')) == type({}) ? g:gem_projections : {}
@@ -542,10 +541,9 @@ function! s:project_projections_list() dict abort
       if file =~# '/$'
         let file .= 'projections.json'
       endif
-      try
-        call add(list, call(json_decode, [join(readfile(file))]))
-      catch
-      endtry
+      if filereadable(file)
+        call add(list, file)
+      endif
     endif
   endfor
   lockvar! list
