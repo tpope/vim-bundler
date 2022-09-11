@@ -113,19 +113,23 @@ endfunction
 function! s:syntaxlock() abort
   setlocal iskeyword+=-,.
   syn match gemfilelockHeading  '^[[:upper:] ]\+$'
-  syn match gemfilelockKey      '^\s\+\zs\S\+:'he=e-1 skipwhite nextgroup=gemfilelockRevision
+  syn match gemfilelockKey      '^\%(  \)\+\zs\S\+:'he=e-1 skipwhite nextgroup=gemfilelockRevision
   syn match gemfilelockKey      'remote:'he=e-1 skipwhite nextgroup=gemfilelockRemote
   syn match gemfilelockRemote   '\S\+' contained
   syn match gemfilelockRevision '[[:alnum:]._-]\+$' contained
-  syn match gemfilelockGem      '^\s\+\zs[[:alnum:]._-]\+\%([ !]\|$\)\@=' contains=gemfilelockFound,gemfilelockMissing skipwhite nextgroup=gemfilelockVersions,gemfilelockBang
+  syn match gemfilelockGem      '^\%(  \)\+\zs[[:alnum:]._-]\+\%([ !]\|$\)\@=' contains=gemfilelockFound,gemfilelockMissing skipwhite nextgroup=gemfilelockVersions,gemfilelockBang
   syn match gemfilelockVersions '([^()]*)' contained contains=gemfilelockVersion
   syn match gemfilelockVersion  '[^,()]*' contained
   syn match gemfilelockBang     '!' contained
   if !empty(bundler#project())
-    exe 'syn match gemfilelockFound "\<\%(bundler\|' . join(keys(s:project().paths()), '\|') . '\)\>" contained'
-    exe 'syn match gemfilelockMissing "\<\%(' . join(filter(keys(s:project().versions()), '!has_key(s:project().paths(), v:val)'), '\|') . '\)\>" contained'
+    let gem_paths = bundler#GemPaths()
+    exe 'syn match gemfilelockFound "\<\%(' . join(['bundler'] + keys(gem_paths), '\|') . '\)\>" contained'
+    let missing_gems = filter(keys(bundler#GemVersions()), '!has_key(gem_paths, v:val)')
+    if !empty(missing_gems)
+      exe 'syn match gemfilelockMissing "\<\%(' . escape(join(missing_gems, '\|'), '.') . '\)\>" contained'
+    endif
   else
-    exe 'syn match gemfilelockFound "\<\%(\S*\)\>" contained'
+    syn match gemfilelockFound "\<\%(\k\+\)\>" contained
   endif
   syn match gemfilelockHeading  '^PLATFORMS$' nextgroup=gemfilelockPlatform skipnl skipwhite
   syn match gemfilelockPlatform '^  \zs[[:alnum:]._-]\+$' contained nextgroup=gemfilelockPlatform skipnl skipwhite
