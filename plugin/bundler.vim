@@ -216,7 +216,7 @@ function! s:Setup() abort
   endif
 endfunction
 
-function! bundler#manifest_task(lnum) abort
+function! bundler#ManifestTask(lnum) abort
   if &filetype ==# 'gemfilelock'
     let gem = matchstr(getline(a:lnum), '^ \{4,\}\zs\S\+\ze (.*)$')
   else
@@ -228,7 +228,7 @@ endfunction
 function! s:ProjectionistDetect() abort
   if s:Detect(get(g:, 'projectionist_file', '')) && !exists('b:bundler_gem')
     let dir = fnamemodify(b:bundler_lock, ':h')
-    let dispatch = 'bundle %:s/.*/\=bundler#manifest_task(exists(''l#'') ? l# : 0)/ --gemfile={project}/Gemfile'
+    let dispatch = 'bundle %:s/.*/\=bundler#ManifestTask(exists(''l#'') ? l# : 0)/ --gemfile={project}/Gemfile'
     call projectionist#append(dir, {
           \ '*': s:filereadable(dir . '/config/environment.rb') ? {} :
           \ {'console': 'bundle console'},
@@ -632,7 +632,7 @@ function! s:Bundle(bang, mods, arg) abort
 endfunction
 
 function! s:BundleComplete(A, L, P) abort
-  return bundler#complete(a:A, a:L, a:P, bundler#project())
+  return bundler#Complete(a:A, a:L, a:P, bundler#project())
 endfunction
 
 let s:completions = {
@@ -656,7 +656,7 @@ let s:completions = {
       \ 'remove': 'gem',
       \ }
 
-function! bundler#complete(A, L, P, ...) abort
+function! bundler#Complete(A, L, P, ...) abort
   let project = a:0 ? a:1 : bundler#project(getcwd())
   let cmd = matchstr(a:L, '\C\u\w*[! ] *\zs\S\+\ze ')
   if empty(cmd)
