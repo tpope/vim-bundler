@@ -142,9 +142,9 @@ function! s:syntaxlock() abort
 endfunction
 
 function! s:setuplock() abort
-  setlocal includeexpr=get(bundler#project().gems(),v:fname,v:fname)
+  setlocal includeexpr=get(bundler#GemPaths(),v:fname,v:fname)
   setlocal suffixesadd=/
-  cnoremap <buffer><expr> <Plug><cfile> get(bundler#project().gems(),expand("<cfile>"),"\022\006")
+  cnoremap <buffer><expr> <Plug><cfile> get(bundler#GemPaths(),expand("<cfile>"),"\022\006")
   let pattern = '^$\|Rails'
   if mapcheck('gf', 'n') =~# pattern
     nnoremap <silent><buffer> gf         :<C-U>Bundle :edit <C-R><C-F><CR>
@@ -562,6 +562,16 @@ function! s:project_dependencies(gem, ...) dict abort
 endfunction
 
 call s:add_methods('project', ['locked', 'gems', 'paths', 'sorted', 'versions', 'has', 'dependencies', 'projections_list'])
+
+function! bundler#GemPaths(...) abort
+  let project = call('bundler#project', a:000)
+  return empty(project) ? {} : call(project.paths, a:000[1:-1], project)
+endfunction
+
+function! bundler#GemVersions(...) abort
+  let project = call('bundler#project', a:000)
+  return empty(project) ? {} : project.versions()
+endfunction
 
 " Section: Bundle
 
