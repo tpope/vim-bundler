@@ -239,7 +239,7 @@ function! s:ProjectionistDetect() abort
           \ 'Gemfile': {'dispatch': dispatch, 'alternate': 'Gemfile.lock'},
           \ 'Gemfile.lock': {'dispatch': dispatch, 'alternate': 'Gemfile'}})
     for projections in bundler#project().projections_list()
-      call projectionist#append(fnamemodify(b:bundler_lock, ':h'), projections)
+      call projectionist#append(fnamemodify(b:bundler_lock, ':h'), copy(projections))
     endfor
   endif
 endfunction
