@@ -723,31 +723,33 @@ function! s:Open(cmd,gem,lcd) abort
     return 'echoerr ' . string('Bundler manifest not found')
   endif
   let exec = substitute(a:cmd, '^<mods> ', '', '')
-  if a:gem ==# '' && a:cmd =~# '\<[tl]\=ch\=d'
+  let gem = matchstr(a:gem, '^[^/]*')
+  if empty(gem) && a:cmd =~# '\<[tl]\=ch\=d'
     return exec . ' ' . fnameescape(s:project().real())
-  elseif a:gem ==# '' && a:lcd
+  elseif empty(gem) && a:lcd
     return exec . ' ' . fnameescape(s:project().manifest())
-  elseif a:gem ==# ''
+  elseif empty(gem)
     return exec . ' ' . fnameescape(s:project().lock())
   else
-    if !has_key(s:project().paths(), a:gem)
+    if !has_key(s:project().paths(), gem)
       call s:project().paths('refresh')
     endif
-    if !has_key(s:project().paths(), a:gem)
-      if has_key(s:project().versions(), a:gem)
-        let v:errmsg = "Gem \"".a:gem."\" is in bundle but not installed"
+    if !has_key(s:project().paths(), gem)
+      if has_key(s:project().versions(), gem)
+        let v:errmsg = "Gem \"".gem."\" is in bundle but not installed"
       else
-        let v:errmsg = "Gem \"".a:gem."\" is not in bundle"
+        let v:errmsg = "Gem \"".gem."\" is not in bundle"
       endif
       return 'echoerr v:errmsg'
     endif
-    let path = fnameescape(s:project().paths()[a:gem])
+    let gempath = fnameescape(s:project().paths()[gem])
+    let path = gempath . fnameescape(matchstr(a:gem, '/.*'))
     if !a:lcd
       let exec .= ' ' . path
     elseif a:cmd =~# '\<pe'
-      let exec .= ' +lcd\ ' . path . ' ' . path
+      let exec .= ' +lcd\ ' . gempath . ' ' . path
     else
-      let exec .= ' ' . path . '|lcd ' . path
+      let exec .= ' ' . path . '|lcd ' . gempath
     endif
     return exec
   endif
