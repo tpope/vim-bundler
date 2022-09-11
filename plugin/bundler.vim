@@ -256,12 +256,17 @@ let s:project_prototype = {}
 let s:projects = {}
 
 function! bundler#project(...) abort
-  if !a:0
+  if !a:0 || a:1 is# 0
     let lock = !empty(get(b:, 'bundler_lock', '')) ? b:bundler_lock : s:FindBundlerLock(s:Absolute())
-  elseif s:filereadable(a:1 . '/Gemfile.lock')
-    let lock = a:1 . '/Gemfile.lock'
-  elseif s:filereadable(a:1)
-    let lock = a:1
+  elseif type(a:1) == type(0)
+    let lock = getbufvar(a:1, 'bundler_lock')
+    if empty(lock)
+      let lock = s:FindBundlerLock(bufname(a:1))
+    endif
+  elseif type(a:1) == type('') && s:filereadable(a:1 . '/Gemfile.lock')
+    let lock = substitute(s:Absolute(a:1), '/$', '', '') . '/Gemfile.lock'
+  elseif type(a:1) == type('') && s:filereadable(a:1)
+    let lock = s:Absolute(a:1)
   else
     let lock = ''
   endif
