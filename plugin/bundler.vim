@@ -524,8 +524,7 @@ function! s:project_projections_list() dict abort
   if has_key(self, '_projections_list')
     return self._projections_list
   endif
-  let self._projections_list = []
-  let list = self._projections_list
+  let list = []
   let gem_projections = type(get(g:, 'gem_projections')) == type({}) ? g:gem_projections : {}
   for name in empty(gem_projections) ? [] : keys(self.versions())
     if type(get(gem_projections, name)) ==# type({})
@@ -547,6 +546,7 @@ function! s:project_projections_list() dict abort
     endif
   endfor
   lockvar! list
+  let self._projections_list = list
   return self._projections_list
 endfunction
 
