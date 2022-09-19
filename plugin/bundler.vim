@@ -779,8 +779,11 @@ if !empty(get(g:, 'bundler_edit_commands', 1))
   command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bopen    exe s:Open('<mods> edit<bang>', <q-args>,1)
   command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bedit    exe s:Open('<mods> edit<bang>', <q-args>,0)
   command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bsplit   exe s:Open('<mods> split', <q-args>, <bang>1)
+        \ |echohl WarningMsg|echomsg "Bsplit is deprecated in favor of" (&sb ? ":below" : ":above") "Bundle open"|echohl NONE
   command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bvsplit  exe s:Open('<mods> vsplit', <q-args>, <bang>1)
+        \ |echohl WarningMsg|echomsg "Bvsplit is deprecated in favor of :vert Bundle open"|echohl NONE
   command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Btabedit exe s:Open('<mods> tabedit', <q-args>, <bang>1)
+        \ |echohl WarningMsg|echomsg "Btabedit is deprecated in favor of :Bundle open"|echohl NONE
   command! -bar -bang -nargs=? -complete=customlist,s:OpenComplete Bpedit   exe s:Open('<mods> pedit', <q-args>, <bang>1)
 endif
 
