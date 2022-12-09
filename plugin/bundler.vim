@@ -296,7 +296,11 @@ function! s:project(...) abort
 endfunction
 
 function! s:project_real(...) dict abort
-  let path = join([self.root]+a:000,'/')
+  if a:0 && a:1 =~# '^/\|^\a\+:'
+    let path = join(a:000, '/')
+  else
+    let path = join([self.root]+a:000,'/')
+  endif
   let pre = substitute(matchstr(path, '^\a\a\+\ze:'), '^\a', '\u&', 'g')
   if len(pre) && exists('*' . pre . 'Real')
     return call(pre . 'Real', [path])
