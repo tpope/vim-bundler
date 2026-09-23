@@ -468,9 +468,10 @@ function! s:project_paths(...) dict abort
         endfor
         if !has_key(paths, name)
           for path in gem_paths
-            let dir = glob(path . '/gems/' . name . '-' . ver . '-*')
-            if isdirectory(dir)
-              let paths[name] = dir
+            let dirs = split(glob(path . '/gems/' . name . '-' . matchstr(ver, '^[^-]*') . '-*'), "\n")
+            call filter(dirs, 'isdirectory(v:val)')
+            if !empty(dirs)
+              let paths[name] = dirs[0]
               break
             endif
           endfor
